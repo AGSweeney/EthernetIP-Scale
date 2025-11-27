@@ -1,0 +1,300 @@
+<Page x:Class="EulerLink.Views.ConfigurationPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <ScrollViewer>
+        <StackPanel Margin="20,16">
+            <TextBlock Text="Configuration" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,16"/>
+
+            <Border x:Name="NotConnectedWarningBorder"
+                    BorderBrush="{ThemeResource InfoBorderBorderBrush}"
+                    BorderThickness="2"
+                    CornerRadius="4"
+                    Background="{ThemeResource InfoBorderBackgroundBrush}"
+                    Padding="12"
+                    Margin="0,0,0,16"
+                    Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="ℹ️" FontSize="20" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="Not connected to device. Please connect to a device in the sidebar to view and configure settings."
+                               FontWeight="SemiBold"
+                               Foreground="{ThemeResource InfoTextForegroundBrush}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <StackPanel x:Name="ConfigurationContentPanel">
+            <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                    BorderThickness="1" 
+                    CornerRadius="4" 
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    Padding="0"
+                    Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Network Configuration" 
+                               FontWeight="SemiBold" 
+                               FontSize="16" 
+                               Margin="12,12,12,8"/>
+                    <StackPanel Margin="12">
+                    <CheckBox x:Name="UseDhcpCheckBox" Content="Use DHCP" Checked="UseDhcpCheckBox_Checked" Unchecked="UseDhcpCheckBox_Unchecked"/>
+                    
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="IP Address:" VerticalAlignment="Center"/>
+                        <TextBox x:Name="IpAddressTextBox" Grid.Row="0" Grid.Column="1" Margin="8,0" Width="150" HorizontalAlignment="Left"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Netmask:" VerticalAlignment="Center"/>
+                        <TextBox x:Name="NetmaskTextBox" Grid.Row="1" Grid.Column="1" Margin="8,0" Width="150" HorizontalAlignment="Left"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Gateway:" VerticalAlignment="Center"/>
+                        <TextBox x:Name="GatewayTextBox" Grid.Row="2" Grid.Column="1" Margin="8,0" Width="150" HorizontalAlignment="Left"/>
+
+                        <TextBlock x:Name="Dns1Label" Grid.Row="3" Grid.Column="0" Text="Primary DNS:" VerticalAlignment="Center"/>
+                        <TextBox x:Name="Dns1TextBox" Grid.Row="3" Grid.Column="1" Margin="8,0" Width="150" HorizontalAlignment="Left"/>
+
+                        <TextBlock x:Name="Dns2Label" Grid.Row="4" Grid.Column="0" Text="Secondary DNS:" VerticalAlignment="Center"/>
+                        <TextBox x:Name="Dns2TextBox" Grid.Row="4" Grid.Column="1" Margin="8,0" Width="150" HorizontalAlignment="Left"/>
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="Save Network Configuration" Click="SaveNetworkConfig_Click" HorizontalAlignment="Stretch" Margin="0,0,8,0"
+                                Style="{StaticResource TealButtonStyle}"/>
+                        <Button Content="Load Current Settings" Click="LoadNetworkConfig_Click"
+                                Style="{StaticResource TealButtonStyle}"/>
+                    </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                    BorderThickness="1" 
+                    CornerRadius="4" 
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    Padding="0"
+                    Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Modbus TCP Configuration" 
+                               FontWeight="SemiBold" 
+                               FontSize="16" 
+                               Margin="12,12,12,8"/>
+                    <StackPanel Margin="12">
+                    <CheckBox x:Name="ModbusEnabledCheckBox" Content="Enable Modbus TCP Server"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="Save Modbus Configuration" Click="SaveModbusConfig_Click" HorizontalAlignment="Stretch" Margin="0,0,8,0"
+                                Style="{StaticResource TealButtonStyle}"/>
+                        <Button Content="Load Current Settings" Click="LoadModbusConfig_Click"
+                                Style="{StaticResource TealButtonStyle}"/>
+                    </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                    BorderThickness="1" 
+                    CornerRadius="4" 
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    Padding="0"
+                    Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="I2C Pull-up Configuration" 
+                               FontWeight="SemiBold" 
+                               FontSize="16" 
+                               Margin="12,12,12,8"/>
+                    <StackPanel Margin="12">
+                        <CheckBox x:Name="I2cPullupEnabledCheckBox" Content="Enable ESP32 Internal Pull-ups for I2C Bus"/>
+                        <TextBlock Text="The ESP32 has weak internal pull-ups (~45kΩ) that can be enabled for the I2C bus. If your I2C devices (like Qwiic boards) already have external pull-ups (typically 4.7kΩ), you should disable the internal pull-ups. Using both internal and external pull-ups can cause bus issues. Default is disabled (use external pull-ups). Restart required for changes to take effect."
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"
+                                   Margin="0,8,0,0"/>
+                        <Button Content="Save I2C Configuration" Click="SaveI2cConfig_Click" 
+                                HorizontalAlignment="Left" 
+                                Margin="0,12,0,0"
+                                Style="{StaticResource TealButtonStyle}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                    BorderThickness="1" 
+                    CornerRadius="4" 
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    Padding="0"
+                    Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="NAU7802 Scale Configuration" 
+                               FontWeight="SemiBold" 
+                               FontSize="16" 
+                               Margin="12,12,12,8"/>
+                    <StackPanel Margin="12">
+                        <CheckBox x:Name="Nau7802EnabledCheckBox" Content="Enable NAU7802 Scale"
+                                  Checked="Nau7802EnabledCheckBox_Checked"
+                                  Unchecked="Nau7802EnabledCheckBox_Unchecked"/>
+                        <TextBlock Text="I2C address: 0x2A. Restart required for gain, sample rate, channel, or LDO changes."
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                   FontSize="12"
+                                   Margin="0,4,0,0"/>
+                        
+                        <StackPanel x:Name="Nau7802ConfigSection" Margin="0,8,0,0">
+                            <TextBlock Text="Input Assembly 100 - Start Byte:"/>
+                            <ComboBox x:Name="Nau7802ByteOffsetComboBox" Width="200" HorizontalAlignment="Left">
+                                <ComboBoxItem Content="Byte 0" Tag="0"/>
+                                <ComboBoxItem Content="Byte 1" Tag="1"/>
+                                <ComboBoxItem Content="Byte 2" Tag="2"/>
+                                <ComboBoxItem Content="Byte 3" Tag="3"/>
+                                <ComboBoxItem Content="Byte 4" Tag="4"/>
+                                <ComboBoxItem Content="Byte 5" Tag="5"/>
+                                <ComboBoxItem Content="Byte 6" Tag="6"/>
+                                <ComboBoxItem Content="Byte 7" Tag="7"/>
+                                <ComboBoxItem Content="Byte 8" Tag="8"/>
+                                <ComboBoxItem Content="Byte 9" Tag="9"/>
+                                <ComboBoxItem Content="Byte 10" Tag="10"/>
+                                <ComboBoxItem Content="Byte 11" Tag="11"/>
+                                <ComboBoxItem Content="Byte 12" Tag="12"/>
+                                <ComboBoxItem Content="Byte 13" Tag="13"/>
+                                <ComboBoxItem Content="Byte 14" Tag="14"/>
+                                <ComboBoxItem Content="Byte 15" Tag="15"/>
+                                <ComboBoxItem Content="Byte 16" Tag="16"/>
+                                <ComboBoxItem Content="Byte 17" Tag="17"/>
+                                <ComboBoxItem Content="Byte 18" Tag="18"/>
+                                <ComboBoxItem Content="Byte 19" Tag="19"/>
+                                <ComboBoxItem Content="Byte 20" Tag="20"/>
+                                <ComboBoxItem Content="Byte 21" Tag="21"/>
+                                <ComboBoxItem Content="Byte 22" Tag="22"/>
+                            </ComboBox>
+                            <TextBlock Text="Device uses 10 bytes starting at this byte offset (weight: 4 bytes, raw: 4 bytes, unit: 1 byte, status: 1 byte). Maximum offset is 22."
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="12"
+                                       Margin="0,4,0,0"/>
+
+                            <TextBlock Text="Weight Unit:" Margin="0,12,0,0"/>
+                            <ComboBox x:Name="Nau7802UnitComboBox" Width="200" HorizontalAlignment="Left">
+                                <ComboBoxItem Content="Grams" Tag="0"/>
+                                <ComboBoxItem Content="Pounds (lbs)" Tag="1"/>
+                                <ComboBoxItem Content="Kilograms (kg)" Tag="2"/>
+                            </ComboBox>
+
+                            <TextBlock Text="PGA Gain:" Margin="0,12,0,0"/>
+                            <ComboBox x:Name="Nau7802GainComboBox" Width="200" HorizontalAlignment="Left">
+                                <ComboBoxItem Content="x1" Tag="0"/>
+                                <ComboBoxItem Content="x2" Tag="1"/>
+                                <ComboBoxItem Content="x4" Tag="2"/>
+                                <ComboBoxItem Content="x8" Tag="3"/>
+                                <ComboBoxItem Content="x16" Tag="4"/>
+                                <ComboBoxItem Content="x32" Tag="5"/>
+                                <ComboBoxItem Content="x64" Tag="6"/>
+                                <ComboBoxItem Content="x128" Tag="7"/>
+                            </ComboBox>
+                            <TextBlock Text="Requires AFE recalibration after change. Restart required."
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="12"
+                                       Margin="0,4,0,0"/>
+
+                            <TextBlock Text="Sample Rate:" Margin="0,12,0,0"/>
+                            <ComboBox x:Name="Nau7802SampleRateComboBox" Width="200" HorizontalAlignment="Left">
+                                <ComboBoxItem Content="10 SPS" Tag="0"/>
+                                <ComboBoxItem Content="20 SPS" Tag="1"/>
+                                <ComboBoxItem Content="40 SPS" Tag="2"/>
+                                <ComboBoxItem Content="80 SPS" Tag="3"/>
+                                <ComboBoxItem Content="320 SPS" Tag="7"/>
+                            </ComboBox>
+                            <TextBlock Text="Requires AFE recalibration after change. Restart required."
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="12"
+                                       Margin="0,4,0,0"/>
+
+                            <TextBlock Text="Channel:" Margin="0,12,0,0"/>
+                            <ComboBox x:Name="Nau7802ChannelComboBox" Width="200" HorizontalAlignment="Left">
+                                <ComboBoxItem Content="Channel 1" Tag="0"/>
+                                <ComboBoxItem Content="Channel 2" Tag="1"/>
+                            </ComboBox>
+                            <TextBlock Text="Restart required for changes to take effect."
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="12"
+                                       Margin="0,4,0,0"/>
+
+                            <TextBlock Text="LDO Voltage:" Margin="0,12,0,0"/>
+                            <ComboBox x:Name="Nau7802LdoComboBox" Width="200" HorizontalAlignment="Left">
+                                <ComboBoxItem Content="4.5V" Tag="0"/>
+                                <ComboBoxItem Content="4.2V" Tag="1"/>
+                                <ComboBoxItem Content="3.9V" Tag="2"/>
+                                <ComboBoxItem Content="3.6V" Tag="3"/>
+                                <ComboBoxItem Content="3.3V" Tag="4"/>
+                                <ComboBoxItem Content="3.0V" Tag="5"/>
+                                <ComboBoxItem Content="2.7V" Tag="6"/>
+                                <ComboBoxItem Content="2.4V" Tag="7"/>
+                            </ComboBox>
+                            <TextBlock Text="Restart required for changes to take effect."
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="12"
+                                       Margin="0,4,0,0"/>
+
+                            <TextBlock Text="Reading Average (Samples):" Margin="0,12,0,0"/>
+                            <NumberBox x:Name="Nau7802AverageNumberBox" 
+                                       Minimum="1" 
+                                       Maximum="50" 
+                                       Value="1" 
+                                       Width="200" 
+                                       HorizontalAlignment="Left"/>
+                            <TextBlock Text="Number of samples to average for regular weight readings (1-50). Higher values = more stable but slower updates. Default: 1 (no averaging). This is separate from calibration averaging."
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="12"
+                                       Margin="0,4,0,0"
+                                       TextWrapping="Wrap"/>
+
+                            <TextBlock Text="Calibration:" Margin="0,16,0,0" FontWeight="SemiBold"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <Button Content="Tare (Zero)" Click="Nau7802Tare_Click"
+                                        Style="{StaticResource TealButtonStyle}"
+                                        Margin="0,0,8,0"/>
+                                <Button Content="Calibrate (Known Weight)" Click="Nau7802Calibrate_Click"
+                                        Style="{StaticResource TealButtonStyle}"
+                                        Margin="0,0,8,0"/>
+                                <Button Content="AFE Calibration" Click="Nau7802AfeCalibrate_Click"
+                                        Style="{StaticResource TealButtonStyle}"/>
+                            </StackPanel>
+                            <TextBlock Text="Tare: Sets zero point. Known Weight: Calibrates with a known weight. AFE: Hardware calibration (required after gain/sample rate changes)."
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="12"
+                                       Margin="0,4,0,0"
+                                       TextWrapping="Wrap"/>
+                            <TextBlock x:Name="Nau7802CalibrationStatusTextBlock"
+                                       Text=""
+                                       Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"
+                                       FontSize="12"
+                                       Margin="0,8,0,0"/>
+                        </StackPanel>
+
+                        <StackPanel x:Name="Nau7802DisabledSection" Margin="0,8,0,0">
+                            <TextBlock Text="Enable NAU7802 to configure settings" 
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="12"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <Button Content="Save NAU7802 Settings" Click="SaveNau7802Config_Click" 
+                                    HorizontalAlignment="Left" 
+                                    Margin="0,0,8,0"
+                                    Style="{StaticResource TealButtonStyle}"/>
+                            <Button Content="Load Current Settings" Click="LoadNau7802Config_Click"
+                                    Style="{StaticResource TealButtonStyle}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>
+
