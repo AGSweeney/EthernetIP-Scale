@@ -1184,6 +1184,8 @@ static esp_err_t api_get_nau7802_handler(httpd_req_t *req)
         bool available = false;
         int32_t raw_reading = 0;
         float weight_grams = 0.0f;
+        float cal_factor = 0.0f;
+        float zero_offset = 0.0f;
         uint8_t revision_code = 0;
         int32_t ch1_offset = 0;
         uint32_t ch1_gain = 0;
@@ -1206,10 +1208,8 @@ static esp_err_t api_get_nau7802_handler(httpd_req_t *req)
                 weight_grams = nau7802_get_weight(nau7802, false, 1, 100);
                 
                 // Get calibration parameters
-                float cal_factor = nau7802_get_calibration_factor(nau7802);
-                float zero_offset = nau7802_get_zero_offset(nau7802);
-                cJSON_AddNumberToObject(json, "calibration_factor", cal_factor);
-                cJSON_AddNumberToObject(json, "zero_offset", zero_offset);
+                cal_factor = nau7802_get_calibration_factor(nau7802);
+                zero_offset = nau7802_get_zero_offset(nau7802);
                 
                 // Get revision code
                 revision_code = nau7802_get_revision_code(nau7802);
@@ -1254,16 +1254,7 @@ static esp_err_t api_get_nau7802_handler(httpd_req_t *req)
             cJSON_AddNumberToObject(json, "unit_code", unit);
             cJSON_AddNumberToObject(json, "calibration_factor", cal_factor);
             cJSON_AddNumberToObject(json, "zero_offset", zero_offset);
-            
-            // Get revision code
-            uint8_t revision_code = nau7802_get_revision_code(nau7802);
             cJSON_AddNumberToObject(json, "revision_code", revision_code);
-            
-            // Get channel calibration registers
-            int32_t ch1_offset = nau7802_get_channel1_offset(nau7802);
-            uint32_t ch1_gain = nau7802_get_channel1_gain(nau7802);
-            int32_t ch2_offset = nau7802_get_channel2_offset(nau7802);
-            uint32_t ch2_gain = nau7802_get_channel2_gain(nau7802);
             
             cJSON *ch1 = cJSON_CreateObject();
             cJSON_AddNumberToObject(ch1, "offset", ch1_offset);
@@ -1274,10 +1265,6 @@ static esp_err_t api_get_nau7802_handler(httpd_req_t *req)
             cJSON_AddNumberToObject(ch2, "offset", ch2_offset);
             cJSON_AddNumberToObject(ch2, "gain", ch2_gain);
             cJSON_AddItemToObject(json, "channel2", ch2);
-            
-            // Get status flags from registers
-            uint8_t pu_ctrl = nau7802_get_register(nau7802, NAU7802_REGISTER_PU_CTRL);
-            uint8_t ctrl2 = nau7802_get_register(nau7802, NAU7802_REGISTER_CTRL2);
             
             cJSON *status = cJSON_CreateObject();
             cJSON_AddBoolToObject(status, "available", available);

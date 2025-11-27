@@ -1519,35 +1519,73 @@ static void nau7802_scale_task(void *pvParameters)
 {
     (void)pvParameters;
     const TickType_t update_interval = pdMS_TO_TICKS(100);  // 100ms = 10 Hz update rate
+    const TickType_t config_reload_interval = pdMS_TO_TICKS(5000);  // Reload config every 5s
+    TickType_t last_config_reload = xTaskGetTickCount();
+    
     uint8_t byte_offset = system_nau7802_byte_offset_load();
     uint8_t average_samples = system_nau7802_average_load();
     
     ESP_LOGI(TAG, "NAU7802 scale task started, byte offset: %d, average samples: %d", byte_offset, average_samples);
     
     while (1) {
-        if (s_nau7802_initialized && nau7802_is_connected(&s_nau7802_device)) {
-            // Get mutex for assembly access
-            SemaphoreHandle_t assembly_mutex = scale_application_get_assembly_mutex();
-            if (assembly_mutex != NULL && xSemaphoreTake(assembly_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-                // Check if we have space in assembly (need 10 bytes: weight (4), raw (4), unit (1), status (1))
-                if (byte_offset <= 22) {  // Need 10 bytes, so max offset is 22
-                    // Get status flags
-                    bool available = nau7802_available(&s_nau7802_device);
-                    bool connected = nau7802_is_connected(&s_nau7802_device);
-                    
-                    // Get scale reading (use averaging if configured)
-                    int32_t raw_reading = 0;
-                    if (available) {
-                        if (average_samples > 1) {
-                            raw_reading = nau7802_get_average(&s_nau7802_device, average_samples, 1000);
+        // Reload configuration periodically to pick up API changes
+        TickType_t now = xTaskGetTickCount();
+        if (now - last_config_reload >= config_reload_interval) {
+            byte_offset = system_nau7802_byte_offset_load();
+            average_samples = system_nau7802_average_load();
+            last_config_reload = now;
+            ESP_LOGD(TAG, "NAU7802 config reloaded: offset=%d, average=%d", byte_offset, average_samples);
+        }
+        
+        // Check if initialized (with mutex protection)
+        bool initialized = false;
+        if (s_nau7802_state_mutex != NULL) {
+            xSemaphoreTake(s_nau7802_state_mutex, portMAX_DELAY);
+            initialized = s_nau7802_initialized;
+            xSemaphoreGive(s_nau7802_state_mutex);
+        } else {
+            initialized = s_nau7802_initialized;
+        }
+        
+        if (initialized) {
+            // Check connection and get readings with device mutex protection
+            bool connected = false;
+            if (s_nau7802_mutex != NULL && xSemaphoreTake(s_nau7802_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                connected = nau7802_is_connected(&s_nau7802_device);
+                xSemaphoreGive(s_nau7802_mutex);
+            }
+            
+            if (connected) {
+                // Get mutex for assembly access
+                SemaphoreHandle_t assembly_mutex = scale_application_get_assembly_mutex();
+                if (assembly_mutex != NULL && xSemaphoreTake(assembly_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                    // Check if we have space in assembly (need 10 bytes: weight (4), raw (4), unit (1), status (1))
+                    if (byte_offset <= 22) {  // Need 10 bytes, so max offset is 22
+                        // Get device readings with mutex protection
+                        bool available = false;
+                        int32_t raw_reading = 0;
+                        float weight_grams = 0.0f;
+                        
+                        if (s_nau7802_mutex != NULL && xSemaphoreTake(s_nau7802_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                            available = nau7802_available(&s_nau7802_device);
+                            
+                            // Get scale reading (use averaging if configured)
+                            if (available) {
+                                if (average_samples > 1) {
+                                    raw_reading = nau7802_get_average(&s_nau7802_device, average_samples, 1000);
+                                } else {
+                                    raw_reading = nau7802_get_reading(&s_nau7802_device);
+                                }
+                            }
+                            
+                            // Get calibrated weight in grams (use averaging if configured)
+                            weight_grams = nau7802_get_weight(&s_nau7802_device, false, average_samples, 1000);
+                            
+                            xSemaphoreGive(s_nau7802_mutex);
                         } else {
-                            raw_reading = nau7802_get_reading(&s_nau7802_device);
+                            ESP_LOGW(TAG, "Failed to acquire NAU7802 device mutex");
                         }
-                    }
-                    
-                    // Get calibrated weight in grams (use averaging if configured)
-                    float weight_grams = nau7802_get_weight(&s_nau7802_device, false, average_samples, 1000);
-                    
+                        
                         // Convert to selected unit and scale by 100
                         uint8_t unit = system_nau7802_unit_load();
                         float weight_converted = weight_grams;
@@ -1574,7 +1612,7 @@ static void nau7802_scale_task(void *pvParameters)
                         
                         // Scale by 100 and convert to int32_t (e.g., 100.24 lbs = 10024)
                         int32_t weight_scaled = (int32_t)(weight_converted * 100.0f + 0.5f);  // Round to nearest
-                    
+                        
                         // Pack status flags into byte: bit 0=available, bit 1=connected, bit 2=initialized
                         uint8_t status_byte = 0;
                         if (available) status_byte |= 0x01;  // Bit 0: available
@@ -1601,17 +1639,19 @@ static void nau7802_scale_task(void *pvParameters)
                         memcpy(&g_assembly_data064[byte_offset + 4], &raw_reading, sizeof(int32_t));
                         g_assembly_data064[byte_offset + 8] = unit;
                         g_assembly_data064[byte_offset + 9] = status_byte;
-                } else {
-                    ESP_LOGW(TAG, "NAU7802 byte offset %d too large for 10-byte data (max 22)", byte_offset);
+                    } else {
+                        ESP_LOGW(TAG, "NAU7802 byte offset %d too large for 10-byte data (max 22)", byte_offset);
+                    }
+                    
+                    xSemaphoreGive(assembly_mutex);
                 }
-                
-                xSemaphoreGive(assembly_mutex);
             }
         }
         
         vTaskDelay(update_interval);
     }
 }
+
 
 // User LED control functions
 static void user_led_init(void) {
