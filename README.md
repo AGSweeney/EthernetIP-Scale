@@ -46,10 +46,13 @@ This project implements a full-featured EtherNet/IP adapter device on the ESP32-
 
 - **RFC 5227 Compliant Network Configuration**: Address Conflict Detection (ACD)
   - RFC 5227 compliant static IP assignment (implemented in application layer)
-  - ACD probe sequence runs **before** IP assignment (deferred assignment)
+  - **ACD Control via Attribute #10**: ACD can be enabled/disabled via EtherNet/IP TCP/IP Interface Object Attribute #10 (`select_acd`)
+  - **Persistent Setting**: ACD setting persists across reboots (stored in NVS)
+  - **Applies to Both Static IP and DHCP**: ACD setting controls conflict detection for both configuration methods
+  - ACD probe sequence runs **before** IP assignment (deferred assignment) when enabled
   - Natural ACD state machine flow (PROBE_WAIT → PROBING → ANNOUNCE_WAIT → ANNOUNCING → ONGOING)
   - Probe sequence: 3 probes from `0.0.0.0` + 4 announcements (~6-10 seconds total)
-  - IP assigned only after ACD confirms no conflict (ACD_IP_OK callback)
+  - IP assigned only after ACD confirms no conflict (ACD_IP_OK callback) when enabled
   - Callback tracking mechanism prevents false positive conflict detection on timeout
   - Configurable ACD timing parameters (probe intervals, announcement intervals, defensive ARP intervals)
   - Active IP defense with periodic ARP probes from `0.0.0.0` (matching Rockwell PLC behavior)
@@ -213,14 +216,27 @@ ENIP_Scale/
 The device supports both DHCP and static IP configuration:
 
 - **DHCP Mode**: Automatic IP assignment via DHCP server
-- **Static IP Mode**: Manual configuration with Address Conflict Detection (ACD)
+  - ACD conflict detection can be enabled/disabled via Attribute #10 (`select_acd`)
+  - If ACD enabled: Performs conflict check before binding offered IP address
+  - If ACD disabled: Binds IP address immediately without conflict detection
+- **Static IP Mode**: Manual configuration with optional Address Conflict Detection (ACD)
   - IP address, netmask, gateway
   - Primary and secondary DNS servers
   - Hostname configuration
+  - ACD conflict detection can be enabled/disabled via Attribute #10 (`select_acd`)
+  - If ACD enabled: Runs full RFC 5227 probe sequence before assigning IP
+  - If ACD disabled: Assigns IP address immediately without conflict detection
+
+**ACD Control (Attribute #10)**:
+- **Class**: 0xF5 (TCP/IP Interface Object)
+- **Attribute**: #10 (`select_acd`)
+- **Type**: BOOL (1 = enabled, 0 = disabled)
+- **Persistent**: Yes (saved to NVS, persists across reboots)
+- **Default**: Enabled (1) for new devices
 
 Configuration can be done via:
 - Web interface: `http://<device-ip>/`
-- EtherNet/IP CIP services
+- EtherNet/IP CIP services (including Attribute #10 for ACD control)
 - NVS (Non-Volatile Storage)
 
 ### EtherNet/IP Configuration

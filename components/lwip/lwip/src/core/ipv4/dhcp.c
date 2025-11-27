@@ -84,6 +84,16 @@
 
 #include <string.h>
 
+/* MODIFICATION: Include EtherNet/IP TCP/IP Interface header to check ACD setting
+ * Added by: Adam G. Sweeney <agsweeney@gmail.com>
+ * This allows DHCP to respect the user's ACD setting (attribute 10)
+ */
+#ifdef ESP_PLATFORM
+/* Forward declare the function - will be linked from opener component */
+/* Use uint8_t instead of CipBool to avoid header dependency */
+extern uint8_t CipTcpIpIsAcdEnabled(void);
+#endif /* ESP_PLATFORM */
+
 #if ESP_LWIP_DHCP_FINE_TIMERS_ONDEMAND
 #include <stdbool.h>
 #define ESP_LWIP_DHCP_FINE_TIMER_START_ONCE(netif, dhcp) if(!dhcp->fine_timer_enabled) { \
@@ -421,8 +431,24 @@ dhcp_check(struct netif *netif)
               (s16_t)netif->name[1]));
   dhcp_set_state(dhcp, DHCP_STATE_CHECKING);
 
+  /* MODIFICATION: Check if ACD is enabled before starting ACD module
+   * Added by: Adam G. Sweeney <agsweeney@gmail.com>
+   * This allows DHCP to respect the user's ACD setting (attribute 10)
+   */
+#ifdef ESP_PLATFORM
+  /* Check if ACD is enabled via EtherNet/IP attribute 10 */
+  if (CipTcpIpIsAcdEnabled()) {
+    /* start ACD module */
+    acd_start(netif, &dhcp->acd, dhcp->offered_ip_addr);
+  } else {
+    /* ACD disabled - skip conflict detection and bind IP immediately */
+    LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_check: ACD disabled, binding IP without conflict check\n"));
+    dhcp_bind(netif);
+  }
+#else
   /* start ACD module */
   acd_start(netif, &dhcp->acd, dhcp->offered_ip_addr);
+#endif /* ESP_PLATFORM */
 }
 #endif /* LWIP_DHCP_DOES_ACD_CHECK */
 

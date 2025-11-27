@@ -105,4 +105,12 @@ void CipTcpIpSetLastAcdMac(const uint8_t mac[6]);
 void CipTcpIpSetLastAcdRawData(const uint8_t *data, size_t length);
 CipBool CipTcpIpIsValidNetworkConfig(const CipTcpIpInterfaceConfiguration *if_cfg);
 
+/* MODIFICATION: Function to check if ACD is enabled
+ * Added by: Adam G. Sweeney <agsweeney@gmail.com>
+ * This allows DHCP and other code to respect the user's ACD setting (attribute 10)
+ * Returns 1 if ACD is enabled, 0 otherwise
+ * Note: Returns uint8_t to avoid header dependencies in lwIP code
+ */
+uint8_t CipTcpIpIsAcdEnabled(void);
+
 #endif /* OPENER_CIPTCPIPINTERFACE_H_ */

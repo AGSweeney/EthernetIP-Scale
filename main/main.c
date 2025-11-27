@@ -805,8 +805,16 @@ static bool tcpip_perform_acd(struct netif *netif, const ip4_addr_t *ip) {
 }
 
 static void tcpip_try_pending_acd(esp_netif_t *netif, struct netif *lwip_netif) {
-    ESP_LOGI(TAG, "tcpip_try_pending_acd: called - probe_pending=%d, netif=%p, lwip_netif=%p", 
-             s_acd_probe_pending, netif, lwip_netif);
+    ESP_LOGI(TAG, "tcpip_try_pending_acd: called - probe_pending=%d, select_acd=%d, netif=%p, lwip_netif=%p", 
+             s_acd_probe_pending, g_tcpip.select_acd ? 1 : 0, netif, lwip_netif);
+    
+    // Check if ACD is enabled - respect user's setting from attribute 10
+    if (!g_tcpip.select_acd) {
+        ESP_LOGI(TAG, "tcpip_try_pending_acd: ACD disabled (select_acd=0) - skipping ACD probe");
+        s_acd_probe_pending = false;
+        return;
+    }
+    
     if (!s_acd_probe_pending || netif == NULL || lwip_netif == NULL) {
         ESP_LOGW(TAG, "tcpip_try_pending_acd: Skipping - probe_pending=%d, netif=%p, lwip_netif=%p", 
                  s_acd_probe_pending, netif, lwip_netif);
@@ -1285,13 +1293,9 @@ void app_main(void)
     (void)NvTcpipLoad(&g_tcpip);
     ESP_LOGI(TAG, "After NV load select_acd=%d", g_tcpip.select_acd);
     
-    // Ensure ACD is enabled for static IP configuration
-    if (!tcpip_config_uses_dhcp() && !g_tcpip.select_acd) {
-        ESP_LOGW(TAG, "ACD not enabled for static IP - enabling ACD for conflict detection");
-        g_tcpip.select_acd = true;
-        NvTcpipStore(&g_tcpip);
-        ESP_LOGI(TAG, "ACD enabled successfully");
-    }
+    // Note: ACD setting (select_acd) is now respected from NV storage.
+    // Users can disable ACD via attribute 10, and it will persist across reboots.
+    // Previously, this code would auto-enable ACD for static IP, overriding user preference.
 
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());

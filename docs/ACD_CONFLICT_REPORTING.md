@@ -4,7 +4,24 @@ This document explains how Address Conflict Detection (ACD) integrates with Ethe
 
 ## Overview
 
-The device implements RFC 5227 compliant Address Conflict Detection (ACD) for static IP addresses. When a conflict is detected, the device captures detailed information about the conflicting device and stores it in the EtherNet/IP TCP/IP Interface Object (Class 0xF5, Attribute #11) for diagnostic access.
+The device implements RFC 5227 compliant Address Conflict Detection (ACD) for both static IP and DHCP configurations. ACD can be enabled or disabled via EtherNet/IP TCP/IP Interface Object Attribute #10 (`select_acd`). When enabled and a conflict is detected, the device captures detailed information about the conflicting device and stores it in Attribute #11 for diagnostic access.
+
+### ACD Control (Attribute #10)
+
+**Class**: 0xF5 (TCP/IP Interface Object)  
+**Attribute**: #10 (`select_acd`)  
+**Type**: BOOL (1 byte)  
+**Access**: Get/Set  
+**Persistent**: Yes (stored in NVS, persists across reboots)
+
+- **Value = 1 (TRUE)**: ACD is **enabled** - conflict detection runs for both static IP and DHCP
+- **Value = 0 (FALSE)**: ACD is **disabled** - IP addresses are assigned immediately without conflict detection
+
+**Important Notes**:
+- The setting is **persistent** - it is saved to non-volatile storage (NVS) when changed
+- The setting **persists across reboots** - the device respects the saved value on startup
+- The setting applies to **both static IP and DHCP** configurations
+- The boot process **no longer auto-enables ACD** - it respects the user's saved preference
 
 ### Quick Summary
 
@@ -197,9 +214,41 @@ The device uses **RFC 5227 option (b)**:
 
 - Uses simplified ACD (not fully RFC 5227 compliant)
 - Conflict detection handled internally by lwIP DHCP client
+- **Respects Attribute #10 (`select_acd`)** - ACD only runs if enabled
+- If ACD is **enabled**: DHCP performs conflict detection before binding the offered IP address
+- If ACD is **disabled**: DHCP binds the IP address immediately without conflict detection
 - Conflict reporting still works if DHCP ACD detects a conflict
 
+**Implementation Details**:
+- The DHCP client checks `CipTcpIpIsAcdEnabled()` before starting ACD
+- If ACD is disabled, `dhcp_bind()` is called immediately, skipping conflict detection
+- If ACD is enabled, the normal ACD flow runs (ARP probe → conflict check → bind)
+
 ## Configuration
+
+### Enabling/Disabling ACD (Attribute #10)
+
+ACD can be controlled via EtherNet/IP TCP/IP Interface Object Attribute #10 (`select_acd`):
+
+**Via EtherNet/IP CIP Tool** (e.g., Molex EtherNet/IP Tools, Rockwell Studio 5000):
+1. Connect to device via EtherNet/IP
+2. Browse to TCP/IP Interface Object (Class 0xF5, Instance 1)
+3. Write Attribute #10 (`select_acd`):
+   - **Value = 1**: Enable ACD (default for new devices)
+   - **Value = 0**: Disable ACD
+4. The setting is automatically saved to NVS and persists across reboots
+
+**Setting Persistence**:
+- The setting is saved via `NvTcpipStore()` when changed
+- The setting is loaded via `NvTcpipLoad()` on boot
+- The boot process **respects the saved setting** - it no longer auto-enables ACD for static IP
+
+**Behavior by Configuration**:
+
+| IP Configuration | ACD Enabled (select_acd=1) | ACD Disabled (select_acd=0) |
+|-----------------|---------------------------|----------------------------|
+| **Static IP** | Runs full RFC 5227 ACD probe sequence before assigning IP | Assigns IP immediately, no conflict detection |
+| **DHCP** | Performs ACD conflict check before binding offered IP | Binds IP immediately, no conflict detection |
 
 ### ACD Retry Logic
 
@@ -289,8 +338,27 @@ with LogixDriver('172.16.82.100') as plc:
 ### No Conflict Data in Attribute #11
 
 - **Check Activity Status**: If activity = 0, no conflict has occurred
-- **Verify ACD is Enabled**: Check `g_tcpip.select_acd` flag
+- **Verify ACD is Enabled**: 
+  - Read Attribute #10 (`select_acd`) via EtherNet/IP - should be 1 (enabled)
+  - Check logs for "After NV load select_acd=X" to see loaded value
+  - If ACD is disabled, no conflict detection will occur
 - **Check Logs**: Look for "ACD: Conflict detected" messages
+- **Verify Configuration**: Ensure ACD is enabled for the IP configuration method in use (static IP or DHCP)
+
+### ACD Not Running When Expected
+
+- **Check Attribute #10**: Verify `select_acd` is set to 1 (enabled)
+- **Check Boot Logs**: Look for "After NV load select_acd=0" - if 0, ACD is disabled
+- **Check Static IP Logs**: Look for "ACD disabled - setting static IP immediately" (indicates ACD is disabled)
+- **Check DHCP Logs**: Look for "dhcp_check: ACD disabled, binding IP without conflict check" (indicates ACD is disabled)
+- **Verify Persistence**: The setting should persist across reboots - if it doesn't, check NVS storage
+
+### ACD Running When Disabled
+
+- **Check Attribute #10**: Verify `select_acd` is set to 0 (disabled)
+- **Check Boot Logs**: Look for "After NV load select_acd=1" - if 1, ACD is enabled
+- **Verify Setting Was Saved**: Check that `NvTcpipStore()` was called after setting attribute #10
+- **Check for Auto-Enable Code**: The boot process should no longer auto-enable ACD (this was removed)
 
 ### Conflict Data Not Updating
 
@@ -316,16 +384,26 @@ with LogixDriver('172.16.82.100') as plc:
    - ACD callback handler (`tcpip_acd_conflict_callback`)
    - Updates activity status via `CipTcpIpSetLastAcdActivity()`
    - Controls user LED indication
+   - **Static IP ACD Control**: Checks `g_tcpip.select_acd` before starting ACD for static IP configurations
    - **Callback Tracking**: Uses `s_acd_callback_received` flag to distinguish between actual callback events and timeout conditions, preventing false positive conflict detection
    - **Legacy Mode IP Assignment**: Assigns IP address in callback when `ACD_IP_OK` fires (after announce phase completes), ensuring probes complete before IP assignment
+   - **Boot Process**: Loads ACD setting from NVS and respects it (no longer auto-enables ACD)
 
-3. **`components/opener/src/cip/ciptcpipinterface.c`**:
+3. **`components/lwip/lwip/src/core/ipv4/dhcp.c`**:
+   - **DHCP ACD Control**: Checks `CipTcpIpIsAcdEnabled()` before starting ACD for DHCP configurations
+   - If ACD is disabled, calls `dhcp_bind()` immediately, skipping conflict detection
+   - If ACD is enabled, runs normal ACD flow via `acd_start()`
+
+4. **`components/opener/src/cip/ciptcpipinterface.c`**:
    - Storage structure (`s_tcpip_last_conflict`)
    - Storage functions (`CipTcpIpSetLastAcdMac`, `CipTcpIpSetLastAcdRawData`, `CipTcpIpSetLastAcdActivity`)
+   - **ACD Status Function**: `CipTcpIpIsAcdEnabled()` - returns current ACD enable/disable status
+   - **Attribute #10 Handler**: `DecodeTcpIpSelectAcd()` - handles writes to attribute #10, saves to NVS
    - Attribute #11 encoder (`EncodeCipLastConflictDetected`)
 
-4. **`components/opener/src/cip/ciptcpipinterface.h`**:
+5. **`components/opener/src/cip/ciptcpipinterface.h`**:
    - Function declarations for storage functions
+   - Declaration for `CipTcpIpIsAcdEnabled()`
 
 ### Thread Safety
 
@@ -349,8 +427,31 @@ The implementation uses a callback tracking mechanism to prevent false positive 
 - **Implementation Details**: ARP frame storage implementation is documented in this document (see "Conflict Data Capture" and "EtherNet/IP Attribute #11 Storage" sections above)
 - **Wireshark Filters**: See `docs/WIRESHARK_FILTERS.md` for debugging ACD conflicts
 
+## Recent Changes
+
+### ACD Control via Attribute #10 (2025)
+
+**Changes Made**:
+1. **Persistent ACD Setting**: Attribute #10 (`select_acd`) now persists across reboots via NVS storage
+2. **Boot Process Fix**: Removed auto-enable code that was overriding user's ACD preference on boot
+3. **DHCP ACD Control**: DHCP now respects the ACD setting - ACD only runs if `select_acd = 1`
+4. **Static IP ACD Control**: Static IP already respected the setting, but now it's properly checked in all code paths
+
+**Implementation Details**:
+- `DecodeTcpIpSelectAcd()` saves the setting to NVS when attribute #10 is written
+- `NvTcpipLoad()` loads the setting on boot
+- `CipTcpIpIsAcdEnabled()` function provides a way for DHCP and other code to check ACD status
+- `dhcp_check()` in `dhcp.c` checks ACD status before starting conflict detection
+- `tcpip_try_pending_acd()` in `main.c` checks ACD status before starting static IP ACD
+
+**User Impact**:
+- Users can now disable ACD via attribute #10 and it will persist across reboots
+- Both static IP and DHCP configurations respect the ACD setting
+- No more unexpected ACD behavior after reboot
+
 ---
 
 **Last Updated**: 2025  
-**Status**: ✅ Implemented and Functional
+**Status**: ✅ Implemented and Functional  
+**ACD Control**: ✅ Attribute #10 fully functional, persists across reboots
 
