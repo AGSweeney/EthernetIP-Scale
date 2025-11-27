@@ -1205,7 +1205,7 @@ static esp_err_t api_get_nau7802_handler(httpd_req_t *req)
                 }
                 
                 // Get calibrated weight in grams
-                weight_grams = nau7802_get_weight(nau7802, false, 1, 100);
+                weight_grams = nau7802_get_weight(nau7802, true, 1, 100);
                 
                 // Get calibration parameters
                 cal_factor = nau7802_get_calibration_factor(nau7802);

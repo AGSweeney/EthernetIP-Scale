@@ -1579,7 +1579,7 @@ static void nau7802_scale_task(void *pvParameters)
                             }
                             
                             // Get calibrated weight in grams (use averaging if configured)
-                            weight_grams = nau7802_get_weight(&s_nau7802_device, false, average_samples, 1000);
+                            weight_grams = nau7802_get_weight(&s_nau7802_device, true, average_samples, 1000);
                             
                             xSemaphoreGive(s_nau7802_mutex);
                         } else {
