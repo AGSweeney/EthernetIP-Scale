@@ -1,10 +1,10 @@
 # EthernetIP-Scale
 
-A comprehensive EtherNet/IP communication adapter for the ESP32-P4 microcontroller, integrating sensor support, Modbus TCP, and web-based configuration.
+A comprehensive EtherNet/IP communication adapter for the ESP32-P4 microcontroller, integrating NAU7802 precision scale support, Modbus TCP, and web-based configuration.
 
 ## Overview
 
-This project implements a full-featured EtherNet/IP adapter device on the ESP32-P4 platform using the OpENer open-source EtherNet/IP stack. The device serves as a bridge between EtherNet/IP networks and local I/O, sensors, and other industrial automation components.
+This project implements a full-featured EtherNet/IP adapter device on the ESP32-P4 platform using the OpENer open-source EtherNet/IP stack. The device serves as a bridge between EtherNet/IP networks and industrial scale applications, providing real-time weight data via EtherNet/IP assemblies and Modbus TCP.
 
 ### Key Features
 
@@ -19,17 +19,18 @@ This project implements a full-featured EtherNet/IP adapter device on the ESP32-
   - Holding Registers 100-115 map to Output Assembly 150
 
 - **NAU7802 Scale Integration**: 24-bit precision load cell amplifier
-  - Configurable gain (x1-x128), sample rate (10-320 SPS), channel selection
-  - Unit selection (grams, lbs, kg) with scaled integer storage
+  - Configurable gain (x1-x128), sample rate (10-320 SPS), channel selection (Channel 1/2)
+  - Unit selection (grams, lbs, kg) with scaled integer storage (no floating point)
   - Reading averaging (1-50 samples) for stable measurements
-  - Software calibration (tare, known-weight) and hardware AFE calibration
-  - Real-time weight data mapped to EtherNet/IP Assembly 100
-  - Web-based configuration page and REST API
+  - Software calibration (tare, known-weight) and hardware AFE (Analog Front End) calibration
+  - Real-time weight data mapped to EtherNet/IP Assembly 100 (configurable byte offset)
+  - Status flags (available, connected, initialized) included in assembly data
+  - Dedicated web-based configuration page (`/nau7802`) and REST API
 
 - **Web-Based Configuration Interface**: Essential device management
-  - Network configuration (DHCP/Static IP)
-  - Firmware updates via OTA
-  - NAU7802 scale configuration and monitoring
+  - Network configuration (DHCP/Static IP) - Main page (`/`)
+  - Firmware updates via OTA - Firmware page (`/ota`)
+  - NAU7802 scale configuration and monitoring - Scale page (`/nau7802`)
   - All other configuration and monitoring available via REST API
 
 - **OTA Firmware Updates**: Over-the-air firmware update capability
@@ -72,20 +73,21 @@ This project implements a full-featured EtherNet/IP adapter device on the ESP32-
 
 ```
 ENIP_Scale/
-├── main/                    # Main application code
+├── main/                    # Main application code (ScaleApplication)
 ├── components/              # Custom components
 │   ├── opener/             # OpENer EtherNet/IP stack
 │   ├── modbus_tcp/         # Modbus TCP server
-│   ├── webui/              # Web interface
+│   ├── webui/              # Web interface and REST API
 │   ├── ota_manager/        # OTA update manager
-│   ├── system_config/      # System configuration
+│   ├── system_config/      # System configuration (NVS)
+│   ├── nau7802/            # NAU7802 scale driver
 │   └── log_buffer/         # Log buffer component
 ├── eds/                     # EtherNet/IP EDS file
 ├── docs/                    # Documentation
 │   ├── ASSEMBLY_DATA_LAYOUT.md  # Byte-by-byte assembly layout
 │   ├── API_Endpoints.md         # Web API documentation
-│   ├── WIRESHARK_FILTERS.md     # Wireshark filters for debugging
-│   └── ExportSniff.md           # Example packet capture analysis
+│   ├── ACD_CONFLICT_REPORTING.md # ACD conflict detection guide
+│   └── OTA_UPLOAD_FIX.md        # OTA upload implementation notes
 ├── dependency_modifications/ # lwIP modifications
 ├── tools/                   # Testing and debugging tools
 │   ├── test_acd_conflict.py     # ACD conflict simulator
@@ -157,7 +159,9 @@ Configuration can be done via:
 The device exposes three assembly instances:
 
 - **Assembly 100 (Input)**: 32 bytes of input data
-  - Available space for sensor data and I/O
+  - NAU7802 scale data (10 bytes): Weight (int32, scaled by 100), Raw ADC reading (int32), Unit code (uint8), Status flags (uint8)
+  - Configurable byte offset (0-22) to avoid conflicts with other sensors
+  - Remaining space available for additional sensor data and I/O
 
 - **Assembly 150 (Output)**: 32 bytes of output data
   - Control commands and output data (all 32 bytes available)
@@ -175,16 +179,28 @@ Connection types supported:
 
 Access the web interface at `http://<device-ip>/` after the device has obtained an IP address.
 
-### Features
+### Pages
 
-The web interface provides essential device management capabilities:
+The web interface provides three dedicated pages:
 
-- **Network Configuration**: Set IP address, netmask, gateway, DNS (DHCP/Static IP modes)
-- **Firmware Updates**: Upload firmware updates via web browser (OTA)
+1. **Main Configuration Page (`/`)**: Network configuration
+   - DHCP/Static IP mode selection
+   - IP address, netmask, gateway configuration
+   - DNS server configuration
+   - All settings stored in NVS and applied on reboot
 
-**Note:** All other device configuration, monitoring, and status information is available via the REST API. The web interface is intentionally minimal to keep it lightweight and focused on essential functions.
+2. **Firmware Update Page (`/ota`)**: Over-the-air firmware updates
+   - File upload for firmware binary
+   - Progress indication
+   - Automatic rollback on failure
 
-For detailed API documentation covering sensor configuration, assembly monitoring, Modbus TCP control, system logs, and more, see [docs/API_Endpoints.md](docs/API_Endpoints.md).
+3. **NAU7802 Scale Page (`/nau7802`)**: Scale configuration and monitoring
+   - Basic configuration: Enable/disable, byte offset, unit selection
+   - Device settings: Gain, sample rate, channel, LDO voltage, reading average
+   - Status & readings: Real-time weight, raw ADC, calibration data, device status
+   - Calibration: Tare (zero), known-weight calibration, AFE hardware calibration
+
+**Note:** All other device configuration, monitoring, and status information is available via the REST API. For detailed API documentation covering assembly monitoring, Modbus TCP control, system logs, and more, see [docs/API_Endpoints.md](docs/API_Endpoints.md).
 
 ## Modbus TCP Mapping
 
@@ -237,10 +253,9 @@ The device supports automatic rollback on failed updates and maintains two OTA p
 ## Logging and Debugging
 
 - **Serial Logging**: Available via UART (default 115200 baud)
-- **Web Log Buffer**: 32KB circular buffer accessible via web interface
+- **Web Log Buffer**: 32KB circular buffer accessible via REST API (`/api/logs`)
 - **Log Levels**: Configurable via menuconfig
-- **Wireshark Filters**: See `docs/WIRESHARK_FILTERS.md` for ACD debugging filters
-- **Testing Tools**: See `tools/README.md` for ACD conflict simulators and network analysis tools
+- **Testing Tools**: See `tools/` directory for ACD conflict simulators and network analysis tools
 
 ## Contributing
 
@@ -301,10 +316,11 @@ This project includes a modified version of lwIP from ESP-IDF v5.5.1. The lwIP m
 
 ## Documentation
 
-- **[ACD and EtherNet/IP Conflict Reporting](docs/ACD_CONFLICT_REPORTING.md)** - Complete guide to ACD conflict detection and EtherNet/IP integration
 - **[Assembly Data Layout](docs/ASSEMBLY_DATA_LAYOUT.md)** - Byte-by-byte assembly data documentation
 - **[API Endpoints](docs/API_Endpoints.md)** - Web UI REST API documentation
-- **[Wireshark Filters](docs/WIRESHARK_FILTERS.md)** - Network debugging filters for ACD
+- **[ACD Conflict Reporting](docs/ACD_CONFLICT_REPORTING.md)** - Complete guide to ACD conflict detection and EtherNet/IP integration
+- **[NAU7802 Driver](components/nau7802/README.md)** - NAU7802 scale driver documentation
+- **[Web UI Component](components/webui/README.md)** - Web interface component documentation
 
 ## Support
 
