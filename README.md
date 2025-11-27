@@ -6,6 +6,11 @@ A comprehensive EtherNet/IP communication adapter for the ESP32-P4 microcontroll
 
 This project implements a full-featured EtherNet/IP adapter device on the ESP32-P4 platform using the OpENer open-source EtherNet/IP stack. The device serves as a bridge between EtherNet/IP networks and industrial scale applications, providing real-time weight data via EtherNet/IP assemblies and Modbus TCP.
 
+**Tested Hardware Configuration:**
+- [Waveshare ESP32-P4-ETH](https://www.waveshare.com/product/arduino/boards-kits/esp32-p4/esp32-p4-eth.htm) development board
+- [SparkFun Qwiic Scale - NAU7802](https://www.sparkfun.com/products/15242) precision scale module
+- [S-Type Beam High-Precision Load Cell](https://www.amazon.com/dp/B077YHLZGQ) (4-wire strain gauge load cell)
+
 ### Key Features
 
 - **EtherNet/IP Adapter**: Full OpENer stack implementation with I/O connections
@@ -53,15 +58,79 @@ This project implements a full-featured EtherNet/IP adapter device on the ESP32-
   - **EtherNet/IP Conflict Reporting**: Automatic capture and storage of conflict data in TCP/IP Interface Object Attribute #11
   - Custom lwIP modifications for EtherNet/IP requirements
 
-## Hardware Requirements
+## Hardware
 
-- **Microcontroller**: ESP32-P4
-- **Ethernet PHY**: IP101 (or compatible)
+This project is designed and tested with the following hardware components:
+
+### Development Board: Waveshare ESP32-P4-ETH
+
+The [Waveshare ESP32-P4-ETH](https://www.waveshare.com/product/arduino/boards-kits/esp32-p4/esp32-p4-eth.htm) development board provides the core processing and Ethernet connectivity for this project.
+
+**Key Features:**
+- **Microcontroller**: ESP32-P4 dual-core RISC-V processor
+- **Ethernet**: 100 Mbps RJ45 Ethernet port with IP101 PHY
+- **Connectivity**: USB-C interface for programming and power
+- **Expansion**: 2×20-pin headers for peripheral integration
+- **GPIO**: Multiple configurable GPIO pins for I2C, SPI, UART, and other interfaces
+
+**Ethernet Configuration:**
+- PHY Address: 1 (default)
+- MDC/MDIO pins: Configurable via menuconfig
+- PHY Reset: Configurable via menuconfig
+
+### Scale Module: SparkFun Qwiic Scale - NAU7802
+
+The [SparkFun Qwiic Scale - NAU7802](https://www.sparkfun.com/products/15242) breakout board provides high-precision weight measurement capabilities.
+
+**Key Features:**
+- **ADC**: 24-bit dual-channel analog-to-digital converter
+- **Interface**: I²C communication (Qwiic connector compatible)
+- **I2C Address**: 0x2A (default, configurable)
+- **Programmable Gain**: PGA with gains from ×1 to ×128
+- **Sample Rates**: 10, 20, 40, 80, or 320 samples per second (SPS)
+- **Channels**: Dual-channel support (Channel 1 and Channel 2)
+- **Power Management**: Low power consumption with programmable LDO voltage (2.4V to 4.5V)
+- **Calibration**: Hardware AFE (Analog Front End) calibration and software weight calibration
+
+**Connection:**
+- Connect to ESP32-P4-ETH via I²C bus
+- Default I2C pins: GPIO7 (SDA), GPIO8 (SCL)
+- Pull-up resistors: External pull-ups required (typically 4.7kΩ)
+- Power: 3.3V from ESP32-P4-ETH
+
+### Load Cell: S-Type Beam High-Precision Load Cell
+
+The [S-Type Beam High-Precision Load Cell](https://www.amazon.com/dp/B077YHLZGQ) provides the physical weight measurement interface for the scale system.
+
+**Key Features:**
+- **Type**: S-type (S-beam) strain gauge load cell
+- **Design**: Suitable for both tension and compression measurements
+- **Protection**: IP67 rated for environmental protection
+- **Accuracy**: High linearity, low hysteresis, excellent repeatability (±0.02% F.S.)
+- **Output**: Analog differential signal (millivolt output)
+- **Wiring**: 4-wire configuration (Excitation+, Excitation-, Signal+, Signal-)
+- **Capacity**: Available in multiple weight capacities (select based on application requirements)
+
+**Connection:**
+- Connect directly to the SparkFun Qwiic Scale - NAU7802 module
+- The NAU7802 module provides excitation voltage and reads the differential signal
+- Ensure proper mechanical mounting for accurate measurements
+- Follow manufacturer's installation guidelines for optimal performance
+
+**Note:** Load cell capacity should be selected based on your application's maximum expected weight. The NAU7802's programmable gain (×1 to ×128) allows optimization for different load cell sensitivities.
+
+### Hardware Requirements
+
+- **Development Board**: [Waveshare ESP32-P4-ETH](https://www.waveshare.com/product/arduino/boards-kits/esp32-p4/esp32-p4-eth.htm) or compatible ESP32-P4 board with Ethernet
+- **Ethernet PHY**: IP101 (included on Waveshare ESP32-P4-ETH)
+- **Scale Module**: [SparkFun Qwiic Scale - NAU7802](https://www.sparkfun.com/products/15242) or compatible NAU7802 breakout
+- **Load Cell**: [S-Type Beam High-Precision Load Cell](https://www.amazon.com/dp/B077YHLZGQ) or compatible 4-wire strain gauge load cell
 - **GPIO Configuration**:
-  - Ethernet: MDC, MDIO, PHY Reset (configurable)
+  - Ethernet: MDC, MDIO, PHY Reset (configurable, board-specific)
   - I2C: SDA, SCL (configurable, defaults GPIO7/GPIO8)
-- **Sensors**:
-  - NAU7802: 24-bit ADC load cell amplifier (I2C, address 0x2A)
+- **Additional Components**:
+  - I2C pull-up resistors (4.7kΩ recommended)
+  - Load cell with appropriate capacity for your application
 
 ## Software Requirements
 
