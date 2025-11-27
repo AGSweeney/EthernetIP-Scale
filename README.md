@@ -1,4 +1,4 @@
-# ENIP Scale
+# EthernetIP-Scale
 
 A comprehensive EtherNet/IP communication adapter for the ESP32-P4 microcontroller, integrating sensor support, Modbus TCP, and web-based configuration.
 
