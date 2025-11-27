@@ -1,0 +1,6 @@
+# Enable custom partition table for OTA support
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# Enable OTA support
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y

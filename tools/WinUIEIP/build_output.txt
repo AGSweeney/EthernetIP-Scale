@@ -1,0 +1,11 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+C:\Users\Adam\.nuget\packages\microsoft.windowsappsdk.winui\1.8.250906003\buildTransitive\Microsoft.UI.Xaml.Markup.Compiler.interop.targets(594,9): error MSB3073: The command ""C:\Users\Adam\.nuget\packages\microsoft.windowsappsdk.winui\1.8.250906003\buildTransitive\..\tools\net6.0\..\net472\XamlCompiler.exe" "obj\x64\Debug\net8.0-windows10.0.19041.0\\input.json" "obj\x64\Debug\net8.0-windows10.0.19041.0\\output.json"" exited with code 1. [C:\Users\Adam\Desktop\WinUIEIP\WinUIEIP\WinUIEIP.csproj]
+
+Build FAILED.
+
+C:\Users\Adam\.nuget\packages\microsoft.windowsappsdk.winui\1.8.250906003\buildTransitive\Microsoft.UI.Xaml.Markup.Compiler.interop.targets(594,9): error MSB3073: The command ""C:\Users\Adam\.nuget\packages\microsoft.windowsappsdk.winui\1.8.250906003\buildTransitive\..\tools\net6.0\..\net472\XamlCompiler.exe" "obj\x64\Debug\net8.0-windows10.0.19041.0\\input.json" "obj\x64\Debug\net8.0-windows10.0.19041.0\\output.json"" exited with code 1. [C:\Users\Adam\Desktop\WinUIEIP\WinUIEIP\WinUIEIP.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:02.75

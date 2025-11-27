@@ -1,0 +1,51 @@
+# Doxyfile.in for NAU7802 ESP-IDF Driver Documentation
+#
+# Copyright (c) 2025 Adam G. Sweeney <agsweeney@gmail.com>
+# Copyright (c) 2019 SparkFun Electronics
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+PROJECT_NAME           = "NAU7802 ESP-IDF Driver"
+PROJECT_NUMBER         = "1.0"
+PROJECT_BRIEF          = "ESP-IDF driver for NAU7802 24-bit load cell amplifier"
+
+INPUT                  = include/nau7802.h \
+                         examples \
+                         docs/mainpage.md
+
+RECURSIVE              = YES
+FILE_PATTERNS          = *.h *.c *.md
+
+OUTPUT_DIRECTORY       = docs/html
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+
+HAVE_DOT               = NO
+CALL_GRAPH             = NO
+CALLER_GRAPH           = NO
+
+MACRO_EXPANSION        = YES
+EXPAND_AS_DEFINED      = ESP_OK ESP_ERR_INVALID_ARG
+
+MARKDOWN_SUPPORT       = YES
+

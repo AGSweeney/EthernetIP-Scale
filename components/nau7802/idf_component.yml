@@ -1,0 +1,11 @@
+## IDF Component Manager Manifest File
+## https://docs.espressif.com/projects/idf-component-manager/en/latest/
+
+idf:
+  version: ">=4.1.0"
+  description: "ESP-IDF driver for NAU7802 24-bit wheatstone bridge and load cell amplifier"
+
+## Note: nvs_flash is a built-in ESP-IDF component and is handled via
+## REQUIRES in CMakeLists.txt. Built-in components should not be listed
+## in dependencies:idf in the component manifest.
+

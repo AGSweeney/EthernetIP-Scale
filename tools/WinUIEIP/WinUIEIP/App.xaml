@@ -1,0 +1,105 @@
+<Application
+    x:Class="EulerLink.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+            </ResourceDictionary.MergedDictionaries>
+            
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#1E3A5F"/>
+                    <SolidColorBrush x:Key="SidebarForegroundBrush" Color="White"/>
+                    <SolidColorBrush x:Key="MainContentBackgroundBrush" Color="#F5F5F5"/>
+                    <SolidColorBrush x:Key="LogoBorderBackgroundBrush" Color="#2A4A6F"/>
+                    <SolidColorBrush x:Key="LogoTextForegroundBrush" Color="#B0D4E8"/>
+                    <SolidColorBrush x:Key="TextBoxBackgroundBrush" Color="White"/>
+                    <SolidColorBrush x:Key="TextBoxForegroundBrush" Color="Black"/>
+                    <SolidColorBrush x:Key="TextBoxBorderBrush" Color="#CCCCCC"/>
+                    <SolidColorBrush x:Key="CopyrightForegroundBrush" Color="#999999"/>
+                    <SolidColorBrush x:Key="InfoBorderBackgroundBrush" Color="#E6F2FF"/>
+                    <SolidColorBrush x:Key="InfoBorderBorderBrush" Color="#0066CC"/>
+                    <SolidColorBrush x:Key="InfoTextForegroundBrush" Color="#003366"/>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#1E1E1E"/>
+                    <SolidColorBrush x:Key="SidebarForegroundBrush" Color="White"/>
+                    <SolidColorBrush x:Key="MainContentBackgroundBrush" Color="#0C0C0C"/>
+                    <SolidColorBrush x:Key="LogoBorderBackgroundBrush" Color="#2D2D2D"/>
+                    <SolidColorBrush x:Key="LogoTextForegroundBrush" Color="#CCCCCC"/>
+                    <SolidColorBrush x:Key="TextBoxBackgroundBrush" Color="#2D2D2D"/>
+                    <SolidColorBrush x:Key="TextBoxForegroundBrush" Color="White"/>
+                    <SolidColorBrush x:Key="TextBoxBorderBrush" Color="#404040"/>
+                    <SolidColorBrush x:Key="CopyrightForegroundBrush" Color="#666666"/>
+                    <SolidColorBrush x:Key="InfoBorderBackgroundBrush" Color="#1E3A5F"/>
+                    <SolidColorBrush x:Key="InfoBorderBorderBrush" Color="#4ECDC4"/>
+                    <SolidColorBrush x:Key="InfoTextForegroundBrush" Color="#B0D4E8"/>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+            
+            <SolidColorBrush x:Key="TealButtonBrush" Color="#4ECDC4"/>
+            <SolidColorBrush x:Key="TealButtonHoverBrush" Color="#45B8B0"/>
+            <SolidColorBrush x:Key="BrandingAccentBrush" Color="#6BC4DD"/>
+            <Style x:Key="TealButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="{StaticResource TealButtonBrush}"/>
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="RootBorder"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="4">
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualState x:Name="Normal"/>
+                                        <VisualState x:Name="PointerOver">
+                                            <Storyboard>
+                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootBorder" Storyboard.TargetProperty="Background">
+                                                    <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource TealButtonHoverBrush}"/>
+                                                </ObjectAnimationUsingKeyFrames>
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Pressed">
+                                            <Storyboard>
+                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootBorder" Storyboard.TargetProperty="Background">
+                                                    <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource TealButtonHoverBrush}"/>
+                                                </ObjectAnimationUsingKeyFrames>
+                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
+                                                                  Storyboard.TargetProperty="Opacity"
+                                                                  To="0.9"
+                                                                  Duration="0"/>
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Disabled">
+                                            <Storyboard>
+                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootBorder" Storyboard.TargetProperty="Background">
+                                                    <DiscreteObjectKeyFrame KeyTime="0" Value="#CCCCCC"/>
+                                                </ObjectAnimationUsingKeyFrames>
+                                                <DoubleAnimation Storyboard.TargetName="ContentPresenter"
+                                                                  Storyboard.TargetProperty="Opacity"
+                                                                  To="0.6"
+                                                                  Duration="0"/>
+                                            </Storyboard>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                                <ContentPresenter x:Name="ContentPresenter"
+                                                  Content="{TemplateBinding Content}"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  Margin="{TemplateBinding Padding}"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
+

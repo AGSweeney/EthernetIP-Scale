@@ -1,0 +1,9 @@
+App.xbf
+MainWindow.xbf
+Views\ConfigurationPage.xbf
+Views\DeviceDiscoveryDialog.xbf
+Views\FirmwareUpdatePage.xbf
+Views\InputAssemblyPage.xbf
+Views\LogsPage.xbf
+Views\Mpu6050StatusPage.xbf
+Views\OutputAssemblyPage.xbf

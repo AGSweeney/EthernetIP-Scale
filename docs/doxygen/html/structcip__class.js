@@ -1,0 +1,27 @@
+var structcip__class =
+[
+    [ "class_code", "structcip__class.html#aa0d3c86eeb643ead0ec90799efbc1dee", null ],
+    [ "class_instance", "structcip__class.html#ab9ed12190a1a0eb8de324736094f3d5a", null ],
+    [ "class_name", "structcip__class.html#a298e05ca692371f03674cbd5e3ba194c", null ],
+    [ "get_all_bit_mask", "structcip__class.html#a8a4204ed825dc9b04c6db70a3eb2704e", null ],
+    [ "get_single_bit_mask", "structcip__class.html#a8779732c2f43b4361e134e0d835dc6e0", null ],
+    [ "highest_attribute_number", "structcip__class.html#a13d9a94c9dbbab692255bb458661602c", null ],
+    [ "instances", "structcip__class.html#a4f6020c15afd9d9947a998a27edcf288", null ],
+    [ "max_instance", "structcip__class.html#a5c3c30827a886a1644fe3584377d69f2", null ],
+    [ "number_of_attributes", "structcip__class.html#aa4893264d371cf20b178deda0e616c58", null ],
+    [ "number_of_instances", "structcip__class.html#a1f3c4ea3fd60256ae9dc48b14acf1ae3", null ],
+    [ "number_of_services", "structcip__class.html#a4d33f12577046f545d90a1b8b764a885", null ],
+    [ "PostCreateCallback", "structcip__class.html#a3c397243deb58b5546cda901d9edf0b5", null ],
+    [ "PostDeleteCallback", "structcip__class.html#a253d087391dc33c211aa54e8982b5e07", null ],
+    [ "PostGetCallback", "structcip__class.html#a8bc57af6baaf9650053a761959754a74", null ],
+    [ "PostResetCallback", "structcip__class.html#a45e44eb6d209d5d7727238365f9ed77d", null ],
+    [ "PostSetCallback", "structcip__class.html#a3848f29202cae5edd3e925680971d68a", null ],
+    [ "PreCreateCallback", "structcip__class.html#ae48d969384cd4627f7577d3f57651a0c", null ],
+    [ "PreDeleteCallback", "structcip__class.html#a113853245688bb7c1f0d296f6936fc47", null ],
+    [ "PreGetCallback", "structcip__class.html#ab6007860f9c79d2a6c8910ca2cadc535", null ],
+    [ "PreResetCallback", "structcip__class.html#a305ca9f5bf74f7bd0f7a508ea83a1874", null ],
+    [ "PreSetCallback", "structcip__class.html#a34505b56f753315eb5e4af6b8e9d8fc2", null ],
+    [ "revision", "structcip__class.html#a49d0ff69fc0f3f71c6061d0e5f483fe1", null ],
+    [ "services", "structcip__class.html#a9871ebce8163c584f95d1a0c7f00e1f1", null ],
+    [ "set_bit_mask", "structcip__class.html#a47a03a36f4097f5a0f107f83e0154573", null ]
+];

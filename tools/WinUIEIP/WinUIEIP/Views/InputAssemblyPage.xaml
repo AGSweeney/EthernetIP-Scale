@@ -1,0 +1,134 @@
+<Page x:Class="EulerLink.Views.InputAssemblyPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <ScrollViewer HorizontalScrollMode="Auto" VerticalScrollMode="Auto">
+        <StackPanel Margin="20,16">
+            <TextBlock Text="Input Assembly (T->O)" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,12"/>
+
+            <StackPanel x:Name="AssemblySizesPanel" Orientation="Horizontal" Margin="0,0,0,12" Visibility="Collapsed">
+                <TextBlock Text="Assembly Size: " FontWeight="SemiBold" Margin="0,0,8,0"/>
+                <TextBlock x:Name="AssemblySizeTextBlock" Text="32 bytes"/>
+            </StackPanel>
+
+            <Border x:Name="NotConnectedWarningBorder"
+                    BorderBrush="#0066CC"
+                    BorderThickness="2"
+                    CornerRadius="4"
+                    Background="#E6F2FF"
+                    Padding="12"
+                    Margin="0,0,0,16"
+                    Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="ℹ️" FontSize="20" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="Not connected to device. Please connect to a device in the sidebar to view input assembly data."
+                               FontWeight="SemiBold"
+                               Foreground="#003366"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <Border x:Name="AssemblyContentBorder"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                    BorderThickness="1" 
+                    CornerRadius="4" 
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    Padding="12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <ItemsControl x:Name="AssemblyItemsControlLeft" Grid.Column="0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,1" MinHeight="24">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0" 
+                                              Text="{Binding ByteNumber}" 
+                                              FontSize="11"
+                                              FontWeight="SemiBold" 
+                                              VerticalAlignment="Center"/>
+
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0">
+                                        <TextBlock Text="{Binding HexValue}" FontSize="10" VerticalAlignment="Center" FontFamily="Consolas" Width="60" TextAlignment="Left"/>
+                                    </StackPanel>
+
+                                    <ItemsControl Grid.Column="2" ItemsSource="{Binding Bits}" Margin="8,0,0,0">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Width="16" 
+                                                        Height="16" 
+                                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                        BorderThickness="1"
+                                                        Background="{Binding BackgroundColor}"
+                                                        CornerRadius="2"
+                                                        Margin="1,0"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    
+                    <ItemsControl x:Name="AssemblyItemsControlRight" Grid.Column="2">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,1" MinHeight="24">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0" 
+                                              Text="{Binding ByteNumber}" 
+                                              FontSize="11"
+                                              FontWeight="SemiBold" 
+                                              VerticalAlignment="Center"/>
+
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0">
+                                        <TextBlock Text="{Binding HexValue}" FontSize="10" VerticalAlignment="Center" FontFamily="Consolas" Width="60" TextAlignment="Left"/>
+                                    </StackPanel>
+
+                                    <ItemsControl Grid.Column="2" ItemsSource="{Binding Bits}" Margin="8,0,0,0">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Width="16" 
+                                                        Height="16" 
+                                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                        BorderThickness="1"
+                                                        Background="{Binding BackgroundColor}"
+                                                        CornerRadius="2"
+                                                        Margin="1,0"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</Page>
+

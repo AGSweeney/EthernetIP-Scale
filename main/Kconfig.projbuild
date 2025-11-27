@@ -1,0 +1,113 @@
+menu "OpenER Ethernet Configuration"
+    config OPENER_ETH_PHY_ADDR
+        int "Ethernet PHY address"
+        range 0 31
+        default 1
+    config OPENER_ETH_PHY_RST_GPIO
+        int "Ethernet PHY reset GPIO"
+        default 51
+    config OPENER_ETH_MDC_GPIO
+        int "Ethernet MDC GPIO"
+        default 31
+    config OPENER_ETH_MDIO_GPIO
+        int "Ethernet MDIO GPIO"
+        default 52
+endmenu
+
+menu "OpenER I2C Configuration"
+    config OPENER_I2C_SCL_GPIO
+        int "I2C SCL GPIO"
+        default 8
+        help
+            GPIO pin number for I2C clock line (SCL)
+    
+    config OPENER_I2C_SDA_GPIO
+        int "I2C SDA GPIO"
+        default 7
+        help
+            GPIO pin number for I2C data line (SDA)
+    
+    config OPENER_I2C_INTERNAL_PULLUP
+        bool "Enable ESP32 internal pull-ups for I2C"
+        default n
+        help
+            Enable ESP32 internal pull-ups (weak, ~45kΩ) for I2C bus.
+            Disable if using external pull-ups (e.g., Qwiic boards have 4.7kΩ pull-ups).
+            Default is disabled (n) to use external pull-ups.
+endmenu
+
+menu "OpenER ACD Timing"
+    config OPENER_ACD_CUSTOM_TIMING
+        bool "Override default RFC5227 timings"
+        default y
+        help
+            Enable this option to tune IPv4 Address Conflict Detection timings to match
+            EtherNet/IP requirements. When disabled, lwIP falls back to RFC5227 defaults.
+
+    if OPENER_ACD_CUSTOM_TIMING
+        config OPENER_ACD_PROBE_WAIT_MS
+            int "Initial probe wait (ms)"
+            default 200
+            help
+                Maximum initial delay before the first probe is sent. Set to 0 for no delay.
+
+        config OPENER_ACD_PROBE_MIN_MS
+            int "Minimum delay between probes (ms)"
+            default 200
+
+        config OPENER_ACD_PROBE_MAX_MS
+            int "Maximum delay between probes (ms)"
+            default 200
+
+        config OPENER_ACD_PROBE_NUM
+            int "Number of probes"
+            default 3
+
+        config OPENER_ACD_ANNOUNCE_NUM
+            int "Number of announcements"
+            default 4
+
+        config OPENER_ACD_ANNOUNCE_INTERVAL_MS
+            int "Interval between announcements (ms)"
+            default 2000
+
+        config OPENER_ACD_ANNOUNCE_WAIT_MS
+            int "Delay before first announcement (ms)"
+            default 2000
+
+        config OPENER_ACD_PERIODIC_DEFEND_INTERVAL_MS
+            int "Periodic active defense interval (ms)"
+            default 90000
+            help
+                Interval for periodic ARP announcements in ACD_STATE_ONGOING state
+                to actively defend the IP address (EtherNet/IP compliance requirement).
+                Default is 90000ms (90 seconds) to match Rockwell PLC behavior.
+                Set to 0 to disable periodic active defense (not recommended for EtherNet/IP compliance).
+    endif
+
+    config OPENER_ACD_RETRY_ENABLED
+        bool "Enable ACD retry on conflict"
+        default y
+        help
+            When enabled, the device will automatically retry acquiring the static IP address
+            after a conflict is detected. The IP address will be removed and the ACD probe
+            sequence will restart after a configurable delay.
+
+    if OPENER_ACD_RETRY_ENABLED
+        config OPENER_ACD_RETRY_DELAY_MS
+            int "Delay before retry (ms)"
+            default 10000
+            range 1000 60000
+            help
+                Delay in milliseconds before retrying the ACD probe sequence after a conflict.
+                Default is 10000ms (10 seconds). Minimum is 1000ms (1 second).
+
+        config OPENER_ACD_RETRY_MAX_ATTEMPTS
+            int "Maximum retry attempts"
+            default 5
+            range 1 20
+            help
+                Maximum number of times to retry acquiring the IP address after conflicts.
+                Set to 0 for unlimited retries (not recommended). Default is 5.
+    endif
+endmenu

@@ -1,0 +1,36 @@
+var lsm6ds3_8h =
+[
+    [ "lsm6ds3_calibration_t", "structlsm6ds3__calibration__t.html", "structlsm6ds3__calibration__t" ],
+    [ "lsm6ds3_handle_t", "structlsm6ds3__handle__t.html", "structlsm6ds3__handle__t" ],
+    [ "lsm6ds3_config_t", "structlsm6ds3__config__t.html", "structlsm6ds3__config__t" ],
+    [ "lsm6ds3_interface_t", "lsm6ds3_8h.html#a5c39eb2f483fa7a6459b28911562f44e", [
+      [ "LSM6DS3_INTERFACE_I2C", "lsm6ds3_8h.html#a5c39eb2f483fa7a6459b28911562f44ea090a5f794c43dd62cb23bc26b06c92c0", null ],
+      [ "LSM6DS3_INTERFACE_SPI", "lsm6ds3_8h.html#a5c39eb2f483fa7a6459b28911562f44ea183f2568e77a9fd27f20dea7186c7704", null ]
+    ] ],
+    [ "lsm6ds3_calibrate_accel", "lsm6ds3_8h.html#a81642fcbd83751ba155bfcc3bfa7cf28", null ],
+    [ "lsm6ds3_calibrate_gyro", "lsm6ds3_8h.html#a061edb112695c184cc39760777af6594", null ],
+    [ "lsm6ds3_clear_accel_calibration", "lsm6ds3_8h.html#a7c437afcb69ddaddce5573322ed226c9", null ],
+    [ "lsm6ds3_clear_gyro_calibration", "lsm6ds3_8h.html#aebe0f68eddc17e45c2333f174d732ecc", null ],
+    [ "lsm6ds3_deinit", "lsm6ds3_8h.html#af7d8c3f5ffee38f6b31ce2aa0ff92208", null ],
+    [ "lsm6ds3_enable_block_data_update", "lsm6ds3_8h.html#a44aa40eb60e77a61459fc5d03b8b856d", null ],
+    [ "lsm6ds3_get_accel_offset", "lsm6ds3_8h.html#a73327eae33841d04b077817482f04c7f", null ],
+    [ "lsm6ds3_get_device_id", "lsm6ds3_8h.html#a9434550b2ad0bf92bb4dde3c62fac9a3", null ],
+    [ "lsm6ds3_get_gyro_offset", "lsm6ds3_8h.html#ac0845d23e89b442dce74620165feccb0", null ],
+    [ "lsm6ds3_init", "lsm6ds3_8h.html#a00623e42dc9cf61d343bffe0e44dc4bf", null ],
+    [ "lsm6ds3_load_calibration_from_nvs", "lsm6ds3_8h.html#a12a77bc01abfc25a98ee73f31df50a19", null ],
+    [ "lsm6ds3_read_accel", "lsm6ds3_8h.html#aeb2100b43ce675a49661f4a09df08276", null ],
+    [ "lsm6ds3_read_gyro", "lsm6ds3_8h.html#a09b57e9de51a00a4bc9299f95278deae", null ],
+    [ "lsm6ds3_reset", "lsm6ds3_8h.html#a5f24c2607a075fbc3c8d3b49c8ca4e91", null ],
+    [ "lsm6ds3_save_calibration_to_nvs", "lsm6ds3_8h.html#aa3ca70acda20e6d9acdf3d2c18955f28", null ],
+    [ "lsm6ds3_set_accel_full_scale", "lsm6ds3_8h.html#ad56173c89f70f71638f57389d8823ee9", null ],
+    [ "lsm6ds3_set_accel_hw_offset", "lsm6ds3_8h.html#a9ba52f93d574860905b230b0b6fba661", null ],
+    [ "lsm6ds3_set_accel_hw_offset_axis", "lsm6ds3_8h.html#a5ae5280ee6208c5482f933b106501f47", null ],
+    [ "lsm6ds3_set_accel_odr", "lsm6ds3_8h.html#a31507e8b77fbb369cf63e36d5b148bf4", null ],
+    [ "lsm6ds3_set_accel_offset", "lsm6ds3_8h.html#a6fd72b821f0ce638fb703350b7ec107d", null ],
+    [ "lsm6ds3_set_accel_offset_axis", "lsm6ds3_8h.html#ae047c0f15e372ed231e27474adf08274", null ],
+    [ "lsm6ds3_set_gyro_full_scale", "lsm6ds3_8h.html#a12ee2007e3e446efb1c2f3bd50a1ad59", null ],
+    [ "lsm6ds3_set_gyro_hw_offset", "lsm6ds3_8h.html#a28edede286e78c9a70bdf9e057f04232", null ],
+    [ "lsm6ds3_set_gyro_odr", "lsm6ds3_8h.html#a089c7e7dc384a584418091caa84eb3f5", null ],
+    [ "lsm6ds3_set_gyro_offset", "lsm6ds3_8h.html#a6413368bff96c7d3c7019440d43f7d15", null ],
+    [ "lsm6ds3_set_gyro_offset_axis", "lsm6ds3_8h.html#aee78a3454fb6a35a969accf7383c0bcb", null ]
+];

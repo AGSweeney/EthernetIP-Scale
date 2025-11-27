@@ -1,0 +1,143 @@
+<Window x:Class="EulerLink.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="EulerLink Device Configuration">
+    
+        <Grid Background="{ThemeResource MainContentBackgroundBrush}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="280" MinWidth="240"/>
+            <ColumnDefinition Width="*" MinWidth="400"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Column="0" Background="{ThemeResource SidebarBackgroundBrush}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" 
+                    Background="{ThemeResource LogoBorderBackgroundBrush}" 
+                    CornerRadius="6" 
+                    Padding="20,20" 
+                    Margin="16,20,16,24">
+                <StackPanel>
+                    <Image x:Name="LogoImage"
+                           Width="240"
+                           Height="100"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,6"
+                           Stretch="Uniform">
+                        <Image.Source>
+                            <BitmapImage UriSource="ms-appx:///Assets/logo.png"/>
+                        </Image.Source>
+                    </Image>
+                    <TextBlock Text="Device Configuration" 
+                              FontSize="12" 
+                              FontWeight="Medium"
+                              Foreground="{ThemeResource LogoTextForegroundBrush}"
+                              Opacity="0.95"
+                              TextAlignment="Center"
+                              HorizontalAlignment="Center"
+                              Margin="0,0,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Grid.Row="1" Margin="16,0,16,16">
+                <TextBlock Text="Device IP:" 
+                          Foreground="{ThemeResource SidebarForegroundBrush}" 
+                          FontSize="12"
+                          Margin="4,0,4,8"/>
+                <TextBox x:Name="DeviceIpTextBox" 
+                         Text="172.16.82.99" 
+                         Background="{ThemeResource TextBoxBackgroundBrush}"
+                         Foreground="{ThemeResource TextBoxForegroundBrush}"
+                         BorderBrush="{ThemeResource TextBoxBorderBrush}"
+                         TextChanged="DeviceIpTextBox_TextChanged"
+                         Margin="0,0,0,8"/>
+                <Button x:Name="DiscoverButton"
+                        Content="Discover Devices"
+                        Click="DiscoverButton_Click"
+                        Style="{StaticResource TealButtonStyle}"
+                        Padding="16,10"
+                        HorizontalAlignment="Stretch"
+                        Margin="0,0,0,12"/>
+                <Button x:Name="ConnectButton" 
+                        Content="CONNECT" 
+                        Click="ConnectButton_Click"
+                        Style="{StaticResource TealButtonStyle}"
+                        Padding="16,10"
+                        HorizontalAlignment="Stretch"
+                        Margin="0,0,0,12"/>
+                <Button x:Name="DisconnectButton" 
+                        Content="DISCONNECT" 
+                        Click="DisconnectButton_Click"
+                        Background="#666666"
+                        Foreground="White"
+                        BorderThickness="0"
+                        FontWeight="SemiBold"
+                        Padding="16,10"
+                        HorizontalAlignment="Stretch"
+                        IsEnabled="False"
+                        Margin="0,0,0,12"/>
+                <TextBlock x:Name="ConnectionStatusTextBlock" 
+                           Text="" 
+                           Foreground="{ThemeResource SidebarForegroundBrush}"
+                           FontSize="11"
+                           Margin="4,0"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <TextBlock Grid.Row="2" 
+                      Text="NAVIGATION" 
+                      Foreground="{ThemeResource SidebarForegroundBrush}" 
+                      FontSize="11"
+                      FontWeight="SemiBold"
+                      Margin="20,8,20,12"
+                      Opacity="0.7"/>
+
+            <NavigationView x:Name="NavView" 
+                            Grid.Row="3"
+                            IsBackButtonVisible="Collapsed"
+                            IsSettingsVisible="False"
+                            PaneDisplayMode="Left"
+                            IsPaneOpen="True"
+                            IsPaneToggleButtonVisible="False"
+                            SelectionChanged="NavView_SelectionChanged"
+                            Background="Transparent">
+                <NavigationView.Resources>
+                    <SolidColorBrush x:Key="NavigationViewItemForeground" Color="White"/>
+                    <SolidColorBrush x:Key="NavigationViewItemForegroundPointerOver" Color="White"/>
+                    <SolidColorBrush x:Key="NavigationViewItemForegroundPressed" Color="White"/>
+                    <SolidColorBrush x:Key="NavigationViewItemForegroundSelected" Color="White"/>
+                    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected" Color="#2A4A6F"/>
+                    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedPointerOver" Color="#2A4A6F"/>
+                    <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver" Color="#2A4A6F"/>
+                </NavigationView.Resources>
+                <NavigationView.MenuItems>
+                    <NavigationViewItem Content="Configuration" Tag="Configuration" Foreground="White" FontSize="14" FontWeight="Normal"/>
+                    <NavigationViewItem x:Name="Mpu6050StatusNavItem" Content="MPU6050 Status" Tag="Mpu6050Status" Foreground="White" FontSize="14" FontWeight="Normal"/>
+                    <NavigationViewItem Content="LSM6DS3 Status" Tag="Lsm6ds3Status" Foreground="White" FontSize="14" FontWeight="Normal"/>
+                    <NavigationViewItem Content="Input Assembly (T->O)" Tag="InputAssembly" Foreground="White" FontSize="14" FontWeight="Normal"/>
+                    <NavigationViewItem Content="Output Assembly (O->T)" Tag="OutputAssembly" Foreground="White" FontSize="14" FontWeight="Normal"/>
+                    <NavigationViewItem Content="Firmware Update" Tag="FirmwareUpdate" Foreground="White" FontSize="14" FontWeight="Normal"/>
+                    <NavigationViewItem Content="Device Logs" Tag="Logs" Foreground="White" FontSize="14" FontWeight="Normal"/>
+                </NavigationView.MenuItems>
+            </NavigationView>
+        </Grid>
+
+        <Grid Grid.Column="1" Background="{ThemeResource MainContentBackgroundBrush}">
+            <Frame x:Name="ContentFrame" 
+                   Background="{ThemeResource MainContentBackgroundBrush}"/>
+            <TextBlock Text="© 2025 AG Sweeney" 
+                      FontSize="10"
+                      FontStyle="Italic"
+                      Foreground="{ThemeResource CopyrightForegroundBrush}"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Bottom"
+                      Margin="0,0,16,8"/>
+        </Grid>
+    </Grid>
+</Window>
+

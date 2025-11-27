@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "dgSpecHash": "qdF/qZ6TXfM=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Adam\\Desktop\\WinUIEIP\\WinUIEIP\\EulerLink.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Adam\\.nuget\\packages\\eeip\\1.6.0.26419\\eeip.1.6.0.26419.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\microsoft.web.webview2\\1.0.3179.45\\microsoft.web.webview2.1.0.3179.45.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\microsoft.win32.systemevents\\10.0.0\\microsoft.win32.systemevents.10.0.0.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\microsoft.windows.sdk.buildtools\\10.0.26100.7175\\microsoft.windows.sdk.buildtools.10.0.26100.7175.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\microsoft.windows.sdk.buildtools.msix\\1.7.20250829.1\\microsoft.windows.sdk.buildtools.msix.1.7.20250829.1.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\microsoft.windowsappsdk\\1.8.251106002\\microsoft.windowsappsdk.1.8.251106002.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\microsoft.windowsappsdk.ai\\1.8.39\\microsoft.windowsappsdk.ai.1.8.39.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\microsoft.windowsappsdk.base\\1.8.250831001\\microsoft.windowsappsdk.base.1.8.250831001.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\microsoft.windowsappsdk.dwrite\\1.8.25090401\\microsoft.windowsappsdk.dwrite.1.8.25090401.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\microsoft.windowsappsdk.foundation\\1.8.251104000\\microsoft.windowsappsdk.foundation.1.8.251104000.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\microsoft.windowsappsdk.interactiveexperiences\\1.8.251104001\\microsoft.windowsappsdk.interactiveexperiences.1.8.251104001.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\microsoft.windowsappsdk.ml\\1.8.2109\\microsoft.windowsappsdk.ml.1.8.2109.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\microsoft.windowsappsdk.runtime\\1.8.251106002\\microsoft.windowsappsdk.runtime.1.8.251106002.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\microsoft.windowsappsdk.widgets\\1.8.250904007\\microsoft.windowsappsdk.widgets.1.8.250904007.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\microsoft.windowsappsdk.winui\\1.8.251105000\\microsoft.windowsappsdk.winui.1.8.251105000.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\system.drawing.common\\10.0.0\\system.drawing.common.10.0.0.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\system.io.pipelines\\10.0.0\\system.io.pipelines.10.0.0.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\system.numerics.tensors\\9.0.0\\system.numerics.tensors.9.0.0.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\system.text.encodings.web\\10.0.0\\system.text.encodings.web.10.0.0.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\system.text.json\\10.0.0\\system.text.json.10.0.0.nupkg.sha512",
+    "C:\\Users\\Adam\\.nuget\\packages\\microsoft.windows.sdk.net.ref\\10.0.19041.57\\microsoft.windows.sdk.net.ref.10.0.19041.57.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "Package 'EEIP 1.6.0.26419' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net8.0-windows10.0.19041'. This package may not be fully compatible with your project.",
+      "projectPath": "C:\\Users\\Adam\\Desktop\\WinUIEIP\\WinUIEIP\\EulerLink.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\Adam\\Desktop\\WinUIEIP\\WinUIEIP\\EulerLink.csproj",
+      "libraryId": "EEIP",
+      "targetGraphs": [
+        "net8.0-windows10.0.19041"
+      ]
+    }
+  ]
+}

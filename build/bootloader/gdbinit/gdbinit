@@ -1,0 +1,2 @@
+source D:/ENIP_Devices/ENIP_Scale/build/bootloader/gdbinit/symbols
+source D:/ENIP_Devices/ENIP_Scale/build/bootloader/gdbinit/connect
