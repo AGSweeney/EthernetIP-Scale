@@ -59,6 +59,29 @@ set(NVDATA_SRCS
     "${OPENER_PORTS_DIR}/nvdata/nvtcpip.c"
 )
 
+# File Object sources (conditionally included based on CIP_FILE_OBJECT)
+set(CIP_FILE_OBJECT_SRCS
+    "${OPENER_SRC_DIR}/cip_objects/OpENerFileObject/cipfile.c"
+    "${OPENER_SRC_DIR}/cip_objects/OpENerFileObject/memfile.c"
+)
+
+# Generate embedded EDS file from source EDS file
+# Note: File generation is handled in the main CMakeLists.txt to avoid ESP-IDF requirements phase issues
+# Paths for generated files (matching paths in main CMakeLists.txt)
+# Use CMAKE_BINARY_DIR which is available during requirements phase
+set(OPENER_BUILD_DIR "${CMAKE_BINARY_DIR}/opener")
+set(EMBEDDED_EDS_HEADER "${OPENER_BUILD_DIR}/embedded_eds_file.h")
+set(EMBEDDED_EDS_SOURCE "${OPENER_BUILD_DIR}/embedded_eds_file.c")
+
+# Create the build directory early so it exists for include paths
+file(MAKE_DIRECTORY "${OPENER_BUILD_DIR}")
+
+# Add generated embedded EDS and icon sources to File Object sources
+# Files will be generated during build (see main CMakeLists.txt)
+set(EMBEDDED_ICON_HEADER "${OPENER_BUILD_DIR}/embedded_icon_file.h")
+set(EMBEDDED_ICON_SOURCE "${OPENER_BUILD_DIR}/embedded_icon_file.c")
+list(APPEND CIP_FILE_OBJECT_SRCS "${EMBEDDED_EDS_SOURCE}" "${EMBEDDED_ICON_SOURCE}")
+
 idf_component_register(
     SRCS 
         ${ESP32_PORT_SRCS}
@@ -67,6 +90,7 @@ idf_component_register(
         ${ENET_ENCAP_SRCS}
         ${UTILS_SRCS}
         ${NVDATA_SRCS}
+        ${CIP_FILE_OBJECT_SRCS}
     INCLUDE_DIRS 
         "${OPENER_SRC_DIR}"
         "${OPENER_PORTS_DIR}"
@@ -76,6 +100,8 @@ idf_component_register(
         "${OPENER_SRC_DIR}/enet_encap"
         "${OPENER_SRC_DIR}/utils"
         "${OPENER_PORTS_DIR}/nvdata"
+        "${OPENER_SRC_DIR}/cip_objects/OpENerFileObject"
+        "${OPENER_BUILD_DIR}"  # For generated embedded_eds_file.h
     REQUIRES 
         lwip
         freertos
@@ -89,5 +115,12 @@ idf_component_register(
         freertos
 )
 
-target_compile_definitions(${COMPONENT_LIB} PRIVATE ESP32)
+target_compile_definitions(${COMPONENT_LIB} PRIVATE ESP32 CIP_FILE_OBJECT=1)
+# EDS file is now embedded in the build - no SPIFFS needed
+# Note: EDS file generation is handled in the main CMakeLists.txt to avoid ESP-IDF requirements phase issues
+
+# Mark the generated files as GENERATED so CMake doesn't check for them during configuration
+# This must be done after idf_component_register
+set_source_files_properties("${EMBEDDED_EDS_SOURCE}" PROPERTIES GENERATED TRUE)
+set_source_files_properties("${EMBEDDED_ICON_SOURCE}" PROPERTIES GENERATED TRUE)
 

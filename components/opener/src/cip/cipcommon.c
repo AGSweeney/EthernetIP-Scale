@@ -33,7 +33,7 @@
 #include "cipstring.h"
 
 #if defined(CIP_FILE_OBJECT) && 0 != CIP_FILE_OBJECT
-  #include "OpENerFileObject/cipfile.h"
+  #include "cipfile.h"
 #endif
 
 #if defined(CIP_SECURITY_OBJECTS) && 0 != CIP_SECURITY_OBJECTS
@@ -108,6 +108,15 @@ EipStatus NotifyClass(const CipClass *RESTRICT const cip_class,
   /* find the instance: if instNr==0, the class is addressed, else find the instance */
   CipInstanceNum instance_number =
     message_router_request->request_path.instance_number;                           /* get the instance number */
+  
+  /* Log Message Router instance #1 requests for debugging */
+  if(cip_class->class_code == 0x02 && instance_number == 1) { /* Message Router class code, instance 1 */
+    OPENER_TRACE_ERR("Message Router instance #1 request: service=0x%02x, instance->data=%p, number_of_attributes=%u\n",
+                     message_router_request->service, 
+                     (instance_number == 1 && cip_class->instances) ? cip_class->instances->data : NULL,
+                     cip_class->number_of_attributes);
+  }
+  
   CipInstance *instance = GetCipInstance(cip_class, instance_number); /* look up the instance (note that if inst==0 this will be the class itself) */
   if(instance) /* if instance is found */
   {
@@ -121,7 +130,6 @@ EipStatus NotifyClass(const CipClass *RESTRICT const cip_class,
         if(message_router_request->service == service->service_number) /* if match is found */
         {
           /* call the service, and return what it returns */
-          // OPENER_TRACE_INFO("notify: calling %s service\n", service->name); // Disabled for less noise
           OPENER_ASSERT(NULL != service->service_function);
           return service->service_function(instance,
                                            message_router_request,
@@ -132,8 +140,14 @@ EipStatus NotifyClass(const CipClass *RESTRICT const cip_class,
           service++;
         }
       }
-    } OPENER_TRACE_WARN(
-      "notify: service 0x%x not supported\n", message_router_request->service);
+    } 
+    /* Log File Object service errors */
+    if(cip_class->class_code == 0x37) {
+      OPENER_TRACE_ERR("File Object: service 0x%02x not supported for instance %d\n", 
+                       message_router_request->service, instance_number);
+    } else {
+      OPENER_TRACE_WARN("notify: service 0x%x not supported\n", message_router_request->service);
+    }
     message_router_response->general_status = kCipErrorServiceNotSupported; /* if no services or service not found, return an error reply*/
   } else {
     OPENER_TRACE_WARN("notify: instance number %d unknown\n", instance_number);
@@ -542,7 +556,7 @@ EipStatus GetAttributeSingle(CipInstance *RESTRICT const instance,
 
   EipUint16 attribute_number =
     message_router_request->request_path.attribute_number;
-
+  
   if( (NULL != attribute) && (NULL != attribute->data) ) {
     uint8_t get_bit_mask =
       (instance->cip_class->get_single_bit_mask[CalculateIndex(attribute_number)
@@ -570,6 +584,8 @@ EipStatus GetAttributeSingle(CipInstance *RESTRICT const instance,
                                              attribute,
                                              message_router_request->service);
       }
+      
+      return kEipStatusOkSend; /* Return early on success */
     }
   }
 

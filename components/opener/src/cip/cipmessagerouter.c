@@ -29,6 +29,16 @@ typedef struct cip_message_router_object {
 /** @brief Pointer to first registered object in MessageRouter*/
 CipMessageRouterObject *g_first_object = NULL;
 
+/** @brief Message Router instance #1 data structure (vendor-specific attributes) */
+typedef struct {
+  CipUint supported_objects_number;        /* Number of supported classes */
+  CipUint *supported_objects_class_ids;    /* Array of class IDs */
+  CipUint max_connections_supported;        /* Maximum connections supported */
+  CipUint number_of_current_connections;   /* Current number of active connections */
+  CipUint *active_connections;             /* Array of active connection IDs */
+  CipUint active_connections_count;        /* Number of active connections */
+} CipMessageRouterInstanceData;
+
 /** @brief Register a CIP Class to the message router
  *  @param cip_class Pointer to a class object to be registered.
  *  @return kEipStatusOk on success
@@ -79,15 +89,120 @@ void InitializeCipMessageRouterClass(CipClass *cip_class) {
                 "GetAttributeSingle");
 }
 
+/** @brief Encode Message Router instance #1 SupportedObjects attribute
+ *  This is a vendor-specific STRUCT attribute matching Rockwell's implementation
+ */
+void EncodeMessageRouterSupportedObjects(const void *const data,
+                                         ENIPMessage *const outgoing_message) {
+  CipMessageRouterInstanceData *instance_data = (CipMessageRouterInstanceData *)data;
+  
+  /* Count registered classes dynamically */
+  CipUint class_count = 0;
+  CipMessageRouterObject *obj = g_first_object;
+  CipBool file_object_found = false;
+  while(obj != NULL) {
+    if(obj->cip_class->class_code == 0x37) {
+      file_object_found = true;
+    }
+    class_count++;
+    obj = obj->next;
+  }
+  
+  OPENER_TRACE_ERR("Message Router: Encoding SupportedObjects - class_count=%u, File Object (0x37) %s\n",
+                   class_count, file_object_found ? "FOUND" : "NOT FOUND");
+  
+  /* Always update the array to ensure it's current (classes may be registered after initialization) */
+  if(instance_data->supported_objects_class_ids != NULL && 
+     instance_data->supported_objects_number == class_count) {
+    /* Array exists and size matches - just refresh the data */
+    obj = g_first_object;
+    CipUint idx = 0;
+    while(obj != NULL && idx < class_count) {
+      instance_data->supported_objects_class_ids[idx] = obj->cip_class->class_code;
+      obj = obj->next;
+      idx++;
+    }
+  } else {
+    /* Need to reallocate array */
+    if(instance_data->supported_objects_class_ids != NULL) {
+      CipFree(instance_data->supported_objects_class_ids);
+    }
+    instance_data->supported_objects_class_ids = (CipUint *)CipCalloc(class_count, sizeof(CipUint));
+    if(instance_data->supported_objects_class_ids != NULL) {
+      obj = g_first_object;
+      CipUint idx = 0;
+      while(obj != NULL && idx < class_count) {
+        instance_data->supported_objects_class_ids[idx] = obj->cip_class->class_code;
+        OPENER_TRACE_ERR("Message Router: Adding class ID %lu (0x%02lX) to array at index %u\n",
+                         (unsigned long)obj->cip_class->class_code, (unsigned long)obj->cip_class->class_code, idx);
+        obj = obj->next;
+        idx++;
+      }
+      instance_data->supported_objects_number = class_count;
+    } else {
+      class_count = 0; /* Fallback if allocation fails */
+      instance_data->supported_objects_number = 0;
+      OPENER_TRACE_ERR("Message Router: ERROR - Failed to allocate ClassesId array!\n");
+    }
+  }
+  
+  /* Save starting position to calculate STRUCT size */
+  size_t struct_start_length = outgoing_message->used_message_length;
+  
+  /* Encode STRUCT: ClassesId array (UINT array)
+   * Note: The STRUCT format is: ArrayLen, Array elements, MaxConnectionsSupported, NumberOfCurrentConnections
+   * The "Number" field is not encoded separately - it's just the array length */
+  if(instance_data->supported_objects_class_ids != NULL) {
+    OPENER_TRACE_ERR("Message Router: Encoding ClassesId array - length=%u, classes: ", instance_data->supported_objects_number);
+    AddIntToMessage(instance_data->supported_objects_number, outgoing_message); /* Array length */
+    for(CipUint i = 0; i < instance_data->supported_objects_number; i++) {
+      OPENER_TRACE_ERR("%u ", instance_data->supported_objects_class_ids[i]);
+      AddIntToMessage(instance_data->supported_objects_class_ids[i], outgoing_message);
+    }
+    OPENER_TRACE_ERR("(encoded %u elements)\n", instance_data->supported_objects_number);
+  } else {
+    AddIntToMessage(0, outgoing_message); /* Empty array */
+    OPENER_TRACE_ERR("Message Router: ERROR - ClassesId array is NULL!\n");
+  }
+  
+  /* Encode STRUCT: MaxConnectionsSupported (UINT) */
+  AddIntToMessage(instance_data->max_connections_supported, outgoing_message);
+  
+  /* Encode STRUCT: NumberOfCurrentConnections (UINT) */
+  AddIntToMessage(instance_data->number_of_current_connections, outgoing_message);
+  
+  size_t struct_size = outgoing_message->used_message_length - struct_start_length;
+  OPENER_TRACE_ERR("Message Router: SupportedObjects STRUCT encoded - STRUCT size: %u bytes (ArrayLen=%u, ArrayElements=%u, MaxConn=%u, NumConn=%u)\n",
+                   (unsigned)struct_size,
+                   instance_data->supported_objects_number,
+                   instance_data->supported_objects_number,
+                   instance_data->max_connections_supported,
+                   instance_data->number_of_current_connections);
+}
+
+/** @brief Encode Message Router instance #1 ActiveConnections attribute
+ *  This is a vendor-specific array attribute
+ */
+void EncodeMessageRouterActiveConnections(const void *const data,
+                                          ENIPMessage *const outgoing_message) {
+  CipMessageRouterInstanceData *instance_data = (CipMessageRouterInstanceData *)data;
+  
+  /* Encode array: UINT array */
+  AddIntToMessage(instance_data->active_connections_count, outgoing_message); /* Array length */
+  for(CipUint i = 0; i < instance_data->active_connections_count; i++) {
+    AddIntToMessage(instance_data->active_connections[i], outgoing_message);
+  }
+}
+
 EipStatus CipMessageRouterInit() {
 
   CipClass *message_router = CreateCipClass(kCipMessageRouterClassCode, /* class code */
                                             7, /* # of class attributes */
                                             7, /* # highest class attribute number */
                                             2, /* # of class services */
-                                            0, /* # of instance attributes */
-                                            0, /* # highest instance attribute number */
-                                            1, /* # of instance services */
+                                            2, /* # of instance attributes (vendor-specific) */
+                                            2, /* # highest instance attribute number */
+                                            2, /* # of instance services (GetAttributeSingle, GetAttributeAll) */
                                             1, /* # of instances */
                                             "message router", /* class name */
                                             1, /* # class revision*/
@@ -99,6 +214,41 @@ EipStatus CipMessageRouterInit() {
                 kGetAttributeSingle,
                 &GetAttributeSingle,
                 "GetAttributeSingle");
+  InsertService(message_router,
+                kGetAttributeAll,
+                &GetAttributeAll,
+                "GetAttributeAll");
+
+  /* Initialize instance #1 with vendor-specific attributes */
+  CipInstance *instance = GetCipInstance(message_router, 1);
+  if(NULL != instance) {
+    /* Allocate and initialize instance data structure */
+    CipMessageRouterInstanceData *instance_data = (CipMessageRouterInstanceData *)CipCalloc(1, sizeof(CipMessageRouterInstanceData));
+    if(NULL == instance_data) {
+      OPENER_TRACE_ERR("Message Router: ERROR - Failed to allocate instance data!\n");
+      return kEipStatusError;
+    }
+    
+    /* Initialize with 0 classes - will be populated dynamically when queried */
+    instance_data->supported_objects_number = 0;
+    instance_data->supported_objects_class_ids = NULL;
+    instance_data->max_connections_supported = 24; /* Default value, can be configured */
+    instance_data->number_of_current_connections = 0; /* Will be updated as connections are made */
+    instance_data->active_connections_count = 0;
+    instance_data->active_connections = NULL; /* Allocate when needed */
+    
+    instance->data = (void *)instance_data;
+    
+    /* Add instance attributes */
+    InsertAttribute(instance, 1, kCipAny, EncodeMessageRouterSupportedObjects, NULL,
+                    instance_data, kGetableSingleAndAll);
+    InsertAttribute(instance, 2, kCipAny, EncodeMessageRouterActiveConnections, NULL,
+                    instance_data, kGetableSingleAndAll);
+    
+  } else {
+    OPENER_TRACE_ERR("Message Router: ERROR - Instance #1 not found after creation!\n");
+    return kEipStatusError;
+  }
 
   /* reserved for future use -> set to zero */
   return kEipStatusOk;

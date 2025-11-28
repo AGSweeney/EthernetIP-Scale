@@ -26,7 +26,7 @@
 #endif
 
 #ifndef CIP_FILE_OBJECT
-  #define CIP_FILE_OBJECT 0
+  #define CIP_FILE_OBJECT 1
 #endif
 
 #ifndef CIP_SECURITY_OBJECTS

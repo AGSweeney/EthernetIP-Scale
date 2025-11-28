@@ -1,7 +1,7 @@
 $ EZ-EDS Version 3.38.20251024 Generated Electronic Data Sheet
 
 [File]
-        DescText = "ENIP GROUND TRUTH ADAPTER";
+        DescText = "ENIP Scale";
         CreateDate = 11-08-2025;
         CreateTime = 10:50:49;
         ModDate = 11-24-2025;
@@ -17,7 +17,7 @@ $ EZ-EDS Version 3.38.20251024 Generated Electronic Data Sheet
         ProdCode = 1;
         MajRev = 1;
         MinRev = 1;
-        ProdName = "ENIP-GROUND-TRUTH-SENSOR";
+        ProdName = "ENIP-Scale";
         Icon = "favicon.ico";
         IconContents =
                 "AAABAAQAEBAAAAEACABoBQAARgAAACAgAAABAAgAqAgAAK4FAAAwMAAAAQAI"
