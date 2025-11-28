@@ -9,6 +9,7 @@ set(ESP32_PORT_SRCS
     "${OPENER_ESP32_DIR}/networkhandler.c"
     "${OPENER_ESP32_DIR}/networkconfig.c"
     "${OPENER_ESP32_DIR}/opener_error.c"
+    "${OPENER_ESP32_DIR}/eth_media_counters.c"
     "${OPENER_ESP32_DIR}/scale_application/scaleapplication.c"
 )
 

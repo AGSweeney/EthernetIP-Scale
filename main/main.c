@@ -134,6 +134,7 @@
 #include "log_buffer.h"
 #include "nau7802.h"
 #include "driver/i2c_master.h"
+#include "eth_media_counters.h"
 
 // Forward declaration - function is in opener component
 SemaphoreHandle_t scale_application_get_assembly_mutex(void);
@@ -150,6 +151,7 @@ static const char *TAG = "opener_main";
 static struct netif *s_netif = NULL;
 static SemaphoreHandle_t s_netif_mutex = NULL;
 static bool s_services_initialized = false;
+static esp_eth_mac_t *s_eth_mac = NULL;  // MAC pointer for media counter access
 
 // NAU7802 scale device
 static nau7802_t s_nau7802_device;
@@ -1112,6 +1114,17 @@ static void ethernet_event_handler(void *arg, esp_event_base_t event_base,
                mac_addr[0], mac_addr[1], mac_addr[2],
                mac_addr[3], mac_addr[4], mac_addr[5]);
         ESP_ERROR_CHECK(esp_netif_set_mac(eth_netif, mac_addr));
+        
+        // Detect PHY and initialize media counters
+        if (s_eth_mac != NULL) {
+            bool ip101_detected = EthMediaCountersInit(s_eth_mac, CONFIG_OPENER_ETH_PHY_ADDR);
+            if (ip101_detected) {
+                ESP_LOGI(TAG, "IP101 PHY detected - media counters enabled");
+            } else {
+                ESP_LOGI(TAG, "Non-IP101 PHY detected - media counters disabled");
+            }
+        }
+        
         #if LWIP_IPV4 && LWIP_ACD
         if (!tcpip_config_uses_dhcp()) {
             struct netif *lwip_netif = (struct netif *)esp_netif_get_netif_impl(eth_netif);
@@ -1350,6 +1363,9 @@ void app_main(void)
 
     esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
+
+    // Store MAC pointer for media counter access
+    s_eth_mac = mac;
 
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
     esp_eth_handle_t eth_handle = NULL;

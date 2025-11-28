@@ -125,7 +125,7 @@ void EncapsulationInit(void) {
 
 EipStatus HandleReceivedExplictTcpData(int socket, EipUint8 *buffer, size_t length, int *number_of_remaining_bytes, struct sockaddr *originator_address,
     ENIPMessage *const outgoing_message) {
-  OPENER_TRACE_INFO("Handles data for TCP socket: %d\n", socket);
+  // OPENER_TRACE_INFO("Handles data for TCP socket: %d\n", socket); // Disabled for less noise
   EipStatus return_value = kEipStatusOk;
   EncapsulationData encapsulation_data = { 0 };
   /* eat the encapsulation header*/
@@ -162,7 +162,7 @@ EipStatus HandleReceivedExplictTcpData(int socket, EipUint8 *buffer, size_t leng
           break;
 
         case (kEncapsulationCommandListIdentity):
-          OPENER_TRACE_INFO("List identity\n");
+          // OPENER_TRACE_INFO("List identity\n"); // Disabled for less noise
           HandleReceivedListIdentityCommandTcp(&encapsulation_data, outgoing_message);
           break;
 
@@ -187,7 +187,7 @@ EipStatus HandleReceivedExplictTcpData(int socket, EipUint8 *buffer, size_t leng
           break;
 
         case (kEncapsulationCommandSendUnitData):
-          OPENER_TRACE_INFO("Send Unit Data\n");
+          // OPENER_TRACE_INFO("Send Unit Data\n"); // Disabled for less noise
           return_value = HandleReceivedSendUnitDataCommand(&encapsulation_data, originator_address, outgoing_message);
           break;
 
@@ -234,7 +234,7 @@ EipStatus HandleReceivedExplictUdpData(const int socket, const struct sockaddr_i
           break;
 
         case (kEncapsulationCommandListIdentity):
-          OPENER_TRACE_INFO("List Identity\n");
+          // OPENER_TRACE_INFO("List Identity\n"); // Disabled for less noise
           if(unicast == true) {
             HandleReceivedListIdentityCommandTcp(&encapsulation_data, outgoing_message);
           } else {

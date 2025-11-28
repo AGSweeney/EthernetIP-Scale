@@ -4,6 +4,7 @@ idf_component_register(
         "networkhandler.c"
         "networkconfig.c"
         "opener_error.c"
+        "eth_media_counters.c"
     INCLUDE_DIRS 
         "."
         "../.."
@@ -17,6 +18,7 @@ idf_component_register(
     REQUIRES 
         lwip
         freertos
+        esp_eth
     PRIV_REQUIRES
         lwip
         freertos

@@ -230,9 +230,8 @@ EipStatus NotifyMessageRouter(EipUint8 *data,
           "notifyMR: notify function of class '%s' returned no reply\n",
           registered_object->cip_class->class_name);
       } else {
-        OPENER_TRACE_INFO(
-          "notifyMR: notify function of class '%s' returned a reply\n",
-          registered_object->cip_class->class_name);
+        // OPENER_TRACE_INFO("notifyMR: notify function of class '%s' returned a reply\n",
+        //                   registered_object->cip_class->class_name); // Disabled for less noise
       }
 #endif
     }

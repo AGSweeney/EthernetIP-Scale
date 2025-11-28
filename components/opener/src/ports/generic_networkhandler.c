@@ -457,7 +457,7 @@ void CheckAndHandleTcpListenerSocket(void) {
   int new_socket = kEipInvalidSocket;
   /* see if this is a connection request to the TCP listener*/
   if( true == CheckSocketSet(g_network_status.tcp_listener) ) {
-    OPENER_TRACE_INFO("networkhandler: new TCP connection\n");
+    // OPENER_TRACE_INFO("networkhandler: new TCP connection\n"); // Disabled for less noise
 
     new_socket = accept(g_network_status.tcp_listener, NULL, NULL);
     if(new_socket == kEipInvalidSocket) {
@@ -467,8 +467,7 @@ void CheckAndHandleTcpListenerSocket(void) {
                        error_code, error_message);
       FreeErrorMessage(error_message);
       return;
-    } OPENER_TRACE_INFO(">>> network handler: accepting new TCP socket: %d \n",
-                        new_socket);
+    } // OPENER_TRACE_INFO(">>> network handler: accepting new TCP socket: %d \n", new_socket); // Disabled for less noise
 
     /* MODIFICATION: Disable Nagle's algorithm for low latency EtherNet/IP explicit messaging
      * Added by: Adam G. Sweeney <agsweeney@gmail.com>
@@ -714,7 +713,7 @@ void CheckAndHandleUdpUnicastSocket(void) {
     if (received_size > 0) {
       NetworkCountersRecordRx((size_t)received_size, false);
     }
-    OPENER_TRACE_INFO("Data received on UDP unicast:\n");
+    // OPENER_TRACE_INFO("Data received on UDP unicast:\n"); // Disabled for less noise
 
     EipUint8 *receive_buffer = &incoming_message[0];
     int remaining_bytes = 0;
@@ -733,7 +732,7 @@ void CheckAndHandleUdpUnicastSocket(void) {
     received_size = remaining_bytes;
 
     if(need_to_send > 0) {
-      OPENER_TRACE_INFO("UDP unicast reply sent:\n");
+      // OPENER_TRACE_INFO("UDP unicast reply sent:\n"); // Disabled for less noise
 
       /* if the active socket matches a registered UDP callback, handle a UDP packet */
       if(sendto( g_network_status.udp_unicast_listener,
@@ -800,7 +799,7 @@ EipStatus SendUdpData(const struct sockaddr_in *const address,
 }
 
 EipStatus HandleDataOnTcpSocket(int socket) {
-  OPENER_TRACE_INFO("Entering HandleDataOnTcpSocket for socket: %d\n", socket);
+  // OPENER_TRACE_INFO("Entering HandleDataOnTcpSocket for socket: %d\n", socket); // Disabled for less noise
   int remaining_bytes = 0;
   long data_sent = PC_OPENER_ETHERNET_BUFFER_SIZE;
 
@@ -933,7 +932,7 @@ EipStatus HandleDataOnTcpSocket(int socket) {
     /*we got the right amount of data */
     data_size += 4;
     /*TODO handle partial packets*/
-    OPENER_TRACE_INFO("Data received on TCP: %" PRIuSZT "\n", data_size);
+    // OPENER_TRACE_INFO("Data received on TCP: %" PRIuSZT "\n", data_size); // Disabled for less noise
     NetworkCountersRecordRx(data_size, false);
 
     g_current_active_tcp_socket = socket;
@@ -971,9 +970,8 @@ EipStatus HandleDataOnTcpSocket(int socket) {
     }
 
     if(need_to_send > 0) {
-      OPENER_TRACE_INFO("TCP reply: send %" PRIuSZT " bytes on %d\n",
-                        outgoing_message.used_message_length,
-                        socket);
+      // OPENER_TRACE_INFO("TCP reply: send %" PRIuSZT " bytes on %d\n",
+      //                   outgoing_message.used_message_length, socket); // Disabled for less noise
 
       data_sent = send(socket,
                        (char *) outgoing_message.message_buffer,

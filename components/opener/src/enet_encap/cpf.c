@@ -140,10 +140,9 @@ EipStatus NotifyConnectedCommonPacketFormat(
           EipUint8 *buffer = g_common_packet_format_data_item.data_item.data;
           g_common_packet_format_data_item.address_item.data.sequence_number =
             GetUintFromMessage( (const EipUint8 **const ) &buffer );
-          OPENER_TRACE_INFO(
-            "Class 3 sequence number: %" PRIu32 ", last sequence number: %u\n",
-            g_common_packet_format_data_item.address_item.data.sequence_number,
-            (unsigned int)connection_object->sequence_count_consuming);
+          // OPENER_TRACE_INFO("Class 3 sequence number: %" PRIu32 ", last sequence number: %u\n",
+          //                   g_common_packet_format_data_item.address_item.data.sequence_number,
+          //                   (unsigned int)connection_object->sequence_count_consuming); // Disabled for less noise
           if(connection_object->sequence_count_consuming ==
              g_common_packet_format_data_item.address_item.data.sequence_number)
           {

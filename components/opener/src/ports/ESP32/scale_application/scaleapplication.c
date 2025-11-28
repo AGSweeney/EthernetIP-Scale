@@ -24,6 +24,7 @@
 #include "nvtcpip.h"
 #include "cipethernetlink.h"
 #include "generic_networkhandler.h"
+#include "eth_media_counters.h"
 #include "sdkconfig.h"
 #include "system_config.h"
 
@@ -333,17 +334,18 @@ EipStatus EthLnkPreGetCallback(CipInstance *instance,
       dst->ul.out_nucast        = src->out_nucast_packets;
       dst->ul.out_discards      = src->out_discards;
       dst->ul.out_errors        = src->out_errors;
-      OPENER_TRACE_INFO("EthCntr Pre: inst=%u in_oct=%" PRIu32 " in_ucast=%" PRIu32 " out_ucast=%" PRIu32 " out_oct=%" PRIu32 "\n",
-                        (unsigned)instance->instance_number,
-                        src->in_octets,
-                        src->in_ucast_packets,
-                        src->out_ucast_packets,
-                        src->out_octets);
+      // OPENER_TRACE_INFO("EthCntr Pre: inst=%u in_oct=%" PRIu32 " in_ucast=%" PRIu32 " out_ucast=%" PRIu32 " out_oct=%" PRIu32 "\n",
+      //                   (unsigned)instance->instance_number,
+      //                   src->in_octets,
+      //                   src->in_ucast_packets,
+      //                   src->out_ucast_packets,
+      //                   src->out_octets); // Disabled for less noise
       break;
     }
     case 5: {
       CipEthernetLinkMediaCounters *dst = &g_ethernet_link[idx].media_cntrs;
-      ZeroMediaCounters(dst);
+      // Use real counters if IP101 detected, otherwise zeros
+      EthMediaCountersCollect(dst);
       break;
     }
     default:
@@ -377,6 +379,8 @@ EipStatus EthLnkPostGetCallback(CipInstance *instance,
       break;
     case 5:
       ZeroMediaCounters(&g_ethernet_link[idx].media_cntrs);
+      // Reset baseline so counters start from zero
+      EthMediaCountersResetBaseline();
       break;
     default:
       break;

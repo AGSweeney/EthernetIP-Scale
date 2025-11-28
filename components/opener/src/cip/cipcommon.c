@@ -111,9 +111,7 @@ EipStatus NotifyClass(const CipClass *RESTRICT const cip_class,
   CipInstance *instance = GetCipInstance(cip_class, instance_number); /* look up the instance (note that if inst==0 this will be the class itself) */
   if(instance) /* if instance is found */
   {
-    OPENER_TRACE_INFO("notify: found instance %d%s\n",
-                      instance_number,
-                      instance_number == 0 ? " (class object)" : "");
+    // OPENER_TRACE_INFO("notify: found instance %d%s\n", instance_number, instance_number == 0 ? " (class object)" : ""); // Disabled for less noise
 
     CipServiceStruct *service = instance->cip_class->services; /* get pointer to array of services */
     if(NULL != service) /* if services are defined */
@@ -123,7 +121,7 @@ EipStatus NotifyClass(const CipClass *RESTRICT const cip_class,
         if(message_router_request->service == service->service_number) /* if match is found */
         {
           /* call the service, and return what it returns */
-          OPENER_TRACE_INFO("notify: calling %s service\n", service->name);
+          // OPENER_TRACE_INFO("notify: calling %s service\n", service->name); // Disabled for less noise
           OPENER_ASSERT(NULL != service->service_function);
           return service->service_function(instance,
                                            message_router_request,
@@ -550,8 +548,8 @@ EipStatus GetAttributeSingle(CipInstance *RESTRICT const instance,
       (instance->cip_class->get_single_bit_mask[CalculateIndex(attribute_number)
        ]);
     if( 0 != ( get_bit_mask & ( 1 << (attribute_number % 8) ) ) ) {
-      OPENER_TRACE_INFO("getAttribute %d\n",
-                        message_router_request->request_path.attribute_number); /* create a reply message containing the data*/
+      // OPENER_TRACE_INFO("getAttribute %d\n",
+      //                   message_router_request->request_path.attribute_number); // Disabled for less noise
 
       /* Call the PreGetCallback if enabled for this attribute and the class provides one. */
       if( (attribute->attribute_flags & kPreGetFunc) &&
