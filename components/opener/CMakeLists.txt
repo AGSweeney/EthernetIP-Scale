@@ -76,9 +76,11 @@ set(EMBEDDED_EDS_SOURCE "${OPENER_BUILD_DIR}/embedded_eds_file.c")
 # Create the build directory early so it exists for include paths
 file(MAKE_DIRECTORY "${OPENER_BUILD_DIR}")
 
-# Add generated embedded EDS source to File Object sources
-# File will be generated during build (see main CMakeLists.txt)
-list(APPEND CIP_FILE_OBJECT_SRCS "${EMBEDDED_EDS_SOURCE}")
+# Add generated embedded EDS and icon sources to File Object sources
+# Files will be generated during build (see main CMakeLists.txt)
+set(EMBEDDED_ICON_HEADER "${OPENER_BUILD_DIR}/embedded_icon_file.h")
+set(EMBEDDED_ICON_SOURCE "${OPENER_BUILD_DIR}/embedded_icon_file.c")
+list(APPEND CIP_FILE_OBJECT_SRCS "${EMBEDDED_EDS_SOURCE}" "${EMBEDDED_ICON_SOURCE}")
 
 idf_component_register(
     SRCS 
@@ -117,7 +119,8 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE ESP32 CIP_FILE_OBJECT=1)
 # EDS file is now embedded in the build - no SPIFFS needed
 # Note: EDS file generation is handled in the main CMakeLists.txt to avoid ESP-IDF requirements phase issues
 
-# Mark the generated file as GENERATED so CMake doesn't check for it during configuration
+# Mark the generated files as GENERATED so CMake doesn't check for them during configuration
 # This must be done after idf_component_register
 set_source_files_properties("${EMBEDDED_EDS_SOURCE}" PROPERTIES GENERATED TRUE)
+set_source_files_properties("${EMBEDDED_ICON_SOURCE}" PROPERTIES GENERATED TRUE)
 

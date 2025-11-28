@@ -367,6 +367,18 @@ static esp_err_t api_ota_update_handler(httpd_req_t *req)
             return send_json_error(req, "Failed to allocate memory", 500);
         }
         
+        // Keep a buffer of the last chunk to search for boundary when connection closes
+        // We'll keep the last 4KB to ensure we catch the boundary (boundary + multipart overhead can be ~1KB)
+        const size_t last_chunk_buffer_size = 4096;
+        char *last_chunk_buffer = malloc(last_chunk_buffer_size);
+        size_t last_chunk_size = 0;
+        if (last_chunk_buffer == NULL) {
+            ESP_LOGE(TAG, "Failed to allocate last chunk buffer");
+            free(chunk_buffer);
+            esp_ota_abort(ota_handle);
+            return send_json_error(req, "Failed to allocate memory", 500);
+        }
+        
         size_t total_written = data_in_buffer;
         uint32_t timeout_count = 0;
         const uint32_t max_timeouts = 100; // Max 100 timeouts (~10 seconds at 100ms each)
@@ -394,24 +406,79 @@ static esp_err_t api_ota_update_handler(httpd_req_t *req)
                 
                 // ret == 0 means connection closed by client (EOF)
                 // This is normal when client finishes sending data
-                // Check if we've received enough data or found the boundary
+                // If we haven't found the boundary yet, search the last chunk buffer
                 if (ret == 0) {
                     if (done) {
                         // Already found boundary, connection close is expected
-                        ESP_LOGI(TAG, "Connection closed by client after receiving all data");
-                        break;
-                    } else if (expected_firmware_bytes > 0 && total_written >= (expected_firmware_bytes * 95 / 100)) {
-                        // Received at least 95% of expected data, likely complete
-                        ESP_LOGI(TAG, "Connection closed by client, received %d bytes (expected ~%d)", 
-                                 total_written, expected_firmware_bytes);
+                        ESP_LOGI(TAG, "Connection closed by client after boundary found, total written: %d bytes", total_written);
                         break;
                     } else {
-                        // Connection closed but we haven't received enough data
-                        ESP_LOGE(TAG, "Connection closed prematurely (ret=0): received %d bytes, expected ~%d bytes", 
+                        // Connection closed without finding boundary - search the last chunk buffer
+                        if (last_chunk_size > 0) {
+                            ESP_LOGI(TAG, "Searching last %d bytes for boundary after connection close", last_chunk_size);
+                            char *boundary_pos = NULL;
+                            
+                            // Search for end boundary first
+                            char *end_match = (char *)memmem(last_chunk_buffer, last_chunk_size, end_boundary, strlen(end_boundary));
+                            if (end_match != NULL) {
+                                // Verify it's actually a boundary by checking for \r\n before it
+                                if (end_match == last_chunk_buffer || 
+                                    (end_match > last_chunk_buffer && end_match[-1] == '\n' && 
+                                     (end_match == last_chunk_buffer + 1 || end_match[-2] == '\r'))) {
+                                    boundary_pos = end_match;
+                                }
+                            }
+                            
+                            // If not found, check for start boundary
+                            if (boundary_pos == NULL) {
+                                char *start_match = (char *)memmem(last_chunk_buffer, last_chunk_size, start_boundary, strlen(start_boundary));
+                                if (start_match != NULL) {
+                                    // Verify it's actually a boundary
+                                    if (start_match == last_chunk_buffer || 
+                                        (start_match > last_chunk_buffer && start_match[-1] == '\n' && 
+                                         (start_match == last_chunk_buffer + 1 || start_match[-2] == '\r'))) {
+                                        size_t end_boundary_len = strlen(end_boundary);
+                                        if (start_match + end_boundary_len > last_chunk_buffer + last_chunk_size || 
+                                            memcmp(start_match, end_boundary, end_boundary_len) != 0) {
+                                            boundary_pos = start_match;
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            if (boundary_pos != NULL) {
+                                // Found boundary in last chunk - calculate how much we wrote too many
+                                size_t bytes_before_boundary = boundary_pos - last_chunk_buffer;
+                                // Remove trailing \r\n
+                                while (bytes_before_boundary > 0 && 
+                                       (last_chunk_buffer[bytes_before_boundary - 1] == '\r' || 
+                                        last_chunk_buffer[bytes_before_boundary - 1] == '\n')) {
+                                    bytes_before_boundary--;
+                                }
+                                if (bytes_before_boundary >= 2 && 
+                                    last_chunk_buffer[bytes_before_boundary - 2] == '\r' && 
+                                    last_chunk_buffer[bytes_before_boundary - 1] == '\n') {
+                                    bytes_before_boundary -= 2;
+                                } else if (bytes_before_boundary >= 1 && 
+                                           last_chunk_buffer[bytes_before_boundary - 1] == '\n') {
+                                    bytes_before_boundary -= 1;
+                                }
+                                
+                                // Calculate how many extra bytes we wrote
+                                size_t extra_bytes = last_chunk_size - bytes_before_boundary;
+                                if (extra_bytes > 0 && total_written >= extra_bytes) {
+                                    ESP_LOGW(TAG, "Found boundary in last chunk - wrote %d extra bytes, but cannot undo write", extra_bytes);
+                                    // Note: We can't undo the write, but at least we know where the boundary was
+                                }
+                                ESP_LOGI(TAG, "Boundary found in last chunk at offset %d", (int)(boundary_pos - last_chunk_buffer));
+                            } else {
+                                ESP_LOGW(TAG, "Boundary not found in last %d bytes", last_chunk_size);
+                            }
+                        }
+                        
+                        ESP_LOGW(TAG, "Connection closed by client without finding boundary, received %d bytes (expected ~%d)", 
                                  total_written, expected_firmware_bytes);
-                        esp_ota_abort(ota_handle);
-                        free(chunk_buffer);
-                        return send_json_error(req, "Connection closed before upload completed", 500);
+                        break;
                     }
                 } else {
                     // Negative ret value indicates actual error
@@ -428,13 +495,29 @@ static esp_err_t api_ota_update_handler(httpd_req_t *req)
             // Binary firmware can contain any byte sequence, so we need to be careful
             char *boundary_pos = NULL;
             size_t to_write = ret;
-            bool found_end = false;
             
-            // Only search for boundaries in the last 256 bytes of the chunk to avoid false positives
-            // Boundaries are typically at the end of the data
-            size_t search_start_offset = (ret > 256) ? (ret - 256) : 0;
+            // Determine search range:
+            // - If chunk is small (< 1KB), search entire chunk (likely last chunk)
+            // - If we're close to expected end (within 1KB), search entire chunk
+            // - Otherwise, only search last 512 bytes to avoid false positives
+            size_t search_start_offset = 0;
+            size_t search_len = ret;
+            
+            if (ret > 1024) {
+                // Large chunk - only search last portion unless we're close to expected end
+                if (expected_firmware_bytes > 0 && total_written + ret >= expected_firmware_bytes - 2048) {
+                    // Close to expected end (within 2KB) - search entire chunk aggressively
+                    search_start_offset = 0;
+                    search_len = ret;
+                } else {
+                    // Not close to end - search last 1KB (increased for better detection)
+                    search_start_offset = (ret > 1024) ? (ret - 1024) : 0;
+                    search_len = (ret > 1024) ? 1024 : ret;
+                }
+            }
+            // else: small chunk (< 1KB), search entire chunk
+            
             char *search_start = chunk_buffer + search_start_offset;
-            size_t search_len = ret - search_start_offset;
             
             // First check for end boundary (--boundary--) - this is the final boundary
             char *end_match = (char *)memmem(search_start, search_len, end_boundary, strlen(end_boundary));
@@ -444,7 +527,6 @@ static esp_err_t api_ota_update_handler(httpd_req_t *req)
                     (end_match > chunk_buffer && end_match[-1] == '\n' && 
                      (end_match == chunk_buffer + 1 || end_match[-2] == '\r'))) {
                     boundary_pos = end_match;
-                    found_end = true;
                 }
             }
             
@@ -471,17 +553,20 @@ static esp_err_t api_ota_update_handler(httpd_req_t *req)
                 to_write = boundary_pos - chunk_buffer;
                 
                 // Remove any trailing \r\n before the boundary (multipart boundaries are preceded by \r\n)
+                // Go back to find the start of the line break sequence
                 while (to_write > 0 && (chunk_buffer[to_write - 1] == '\r' || chunk_buffer[to_write - 1] == '\n')) {
                     to_write--;
                 }
                 
-                // Also check if there's a \r\n sequence before boundary_pos that we should exclude
+                // Make sure we have a complete \r\n sequence removed
                 if (to_write >= 2 && chunk_buffer[to_write - 2] == '\r' && chunk_buffer[to_write - 1] == '\n') {
                     to_write -= 2;
                 } else if (to_write >= 1 && chunk_buffer[to_write - 1] == '\n') {
                     to_write -= 1;
                 }
                 
+                ESP_LOGI(TAG, "Boundary found at offset %d in chunk, writing %d bytes (chunk size: %d)", 
+                         (int)(boundary_pos - chunk_buffer), to_write, ret);
                 done = true;
             }
             
@@ -489,18 +574,32 @@ static esp_err_t api_ota_update_handler(httpd_req_t *req)
                 if (!ota_manager_write_streaming_chunk(ota_handle, (const uint8_t *)chunk_buffer, to_write)) {
                     ESP_LOGE(TAG, "Failed to write chunk at offset %d", total_written);
                     free(chunk_buffer);
+                    free(last_chunk_buffer);
                     return send_json_error(req, "Failed to write firmware data", 500);
                 }
                 total_written += to_write;
+                
+                // Update last chunk buffer for boundary detection on connection close
+                // Keep the last portion of this chunk (up to last_chunk_buffer_size)
+                if (to_write <= last_chunk_buffer_size) {
+                    // Entire chunk fits in buffer
+                    memcpy(last_chunk_buffer, chunk_buffer, to_write);
+                    last_chunk_size = to_write;
+                } else {
+                    // Only keep the last portion
+                    memcpy(last_chunk_buffer, chunk_buffer + to_write - last_chunk_buffer_size, last_chunk_buffer_size);
+                    last_chunk_size = last_chunk_buffer_size;
+                }
             }
             
-            // If we found the end boundary, we're done
-            if (found_end) {
-                done = true;
+            // If we found the end boundary or any boundary, we're done - break immediately
+            if (done) {
+                break;
             }
         }
         
         free(chunk_buffer);
+        free(last_chunk_buffer);
         
         ESP_LOGI(TAG, "Streamed %d bytes to OTA partition", total_written);
         
@@ -518,8 +617,14 @@ static esp_err_t api_ota_update_handler(httpd_req_t *req)
                 return send_json_error(req, "Upload incomplete - connection may have been interrupted", 400);
             }
             
-            ESP_LOGI(TAG, "Upload validation: received %d bytes, expected ~%d bytes (within tolerance)", 
-                     total_written, expected_firmware_bytes);
+            // Warn if we wrote significantly more than expected (might have included boundary data)
+            if (total_written > expected_firmware_bytes + 500) {
+                ESP_LOGW(TAG, "Upload validation: received %d bytes, expected ~%d bytes (wrote %d bytes too many - boundary may not have been detected)", 
+                         total_written, expected_firmware_bytes, total_written - expected_firmware_bytes);
+            } else {
+                ESP_LOGI(TAG, "Upload validation: received %d bytes, expected ~%d bytes (within tolerance)", 
+                         total_written, expected_firmware_bytes);
+            }
         }
         
         // Finish OTA update (this will set boot partition and reboot)

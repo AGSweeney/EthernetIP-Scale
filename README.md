@@ -18,6 +18,9 @@ This project implements a full-featured EtherNet/IP adapter device on the ESP32-
   - Output Assembly 150 (32 bytes)
   - Configuration Assembly 151 (10 bytes)
   - Support for Exclusive Owner, Input Only, and Listen Only connections
+  - **CIP File Object (Class 0x37)**: Embedded EDS file serving for automatic device discovery
+    - Instance 200: EDS file ("EDS.txt") - automatically downloadable by RSLinx and Others
+    - Instance 201: Icon file ("EDSCollection.gz") - device icon for configuration tools
 
 - **Modbus TCP Server**: Standard Modbus TCP/IP server (port 502)
   - Input Registers 0-15 map to Input Assembly 100
@@ -159,6 +162,7 @@ ENIP_Scale/
 │   ├── ASSEMBLY_DATA_LAYOUT.md  # Byte-by-byte assembly layout
 │   ├── API_Endpoints.md         # Web API documentation
 │   ├── ACD_CONFLICT_REPORTING.md # ACD conflict detection guide
+│   ├── FILE_OBJECT_INTEGRATION.md # CIP File Object implementation guide
 │   └── OTA_UPLOAD_FIX.md        # OTA upload implementation notes
 ├── dependency_modifications/ # lwIP modifications
 ├── tools/                   # Testing and debugging tools
@@ -311,6 +315,20 @@ Key device information:
 - **Product**: ENIP-Scale (Product Code: 1)
 - **Type**: General Purpose Discrete I/O
 
+### CIP File Object Integration
+
+The device implements the CIP File Object (Class 0x37) to serve the EDS file and icon directly from the device, eliminating the need for manual EDS file installation:
+
+- **Automatic EDS Download**: RSLinx can download the EDS file from the device
+- **Instance 200 (0xC8)**: Serves the EDS file as "EDS.txt" with Binary encoding
+- **Instance 201 (0xC9)**: Serves the device icon as "EDSCollection.gz" with CompressedFile encoding
+- **Embedded Files**: Both EDS and icon files are embedded in firmware at build time
+- **Message Router Support**: Message Router instance #1 advertises supported CIP objects (including File Object) for EtherNet/IP Explorer discovery
+
+**File Object Implementation**: This project uses the [OpENer File Object](https://github.com/EIPStackGroup/OpENerFileObject) implementation, which provides an open-source CIP File Object compatible with the OpENer EtherNet/IP stack.
+
+**For detailed implementation documentation, see [docs/FILE_OBJECT_INTEGRATION.md](docs/FILE_OBJECT_INTEGRATION.md).**
+
 ## Custom lwIP Modifications
 
 This project includes custom modifications to the lwIP network stack for RFC 5227 compliance and EtherNet/IP optimization. See [dependency_modifications/LWIP_MODIFICATIONS.md](dependency_modifications/LWIP_MODIFICATIONS.md) for details.
@@ -363,6 +381,9 @@ All OpENer source files retain their original copyright notices:
 - Copyright (c) 2009, Rockwell Automation, Inc.
 - Modifications by Adam G. Sweeney <agsweeney@gmail.com> are clearly marked
 
+### OpENer File Object
+This project uses the [OpENer File Object](https://github.com/EIPStackGroup/OpENerFileObject) implementation, which is licensed under an adapted BSD-style license. The OpENer File Object license file is included in `components/opener/src/cip_objects/OpENerFileObject/license.txt` and must be preserved in all distributions.
+
 ### lwIP Network Stack
 This project includes a modified version of lwIP from ESP-IDF v5.5.1. The lwIP modifications are clearly marked with attribution. Original lwIP license terms apply.
 
@@ -404,6 +425,7 @@ This project includes a modified version of lwIP from ESP-IDF v5.5.1. The lwIP m
 - **[Assembly Data Layout](docs/ASSEMBLY_DATA_LAYOUT.md)** - Byte-by-byte assembly data documentation
 - **[API Endpoints](docs/API_Endpoints.md)** - Web UI REST API documentation
 - **[ACD Conflict Reporting](docs/ACD_CONFLICT_REPORTING.md)** - Complete guide to ACD conflict detection and EtherNet/IP integration
+- **[File Object Integration](docs/FILE_OBJECT_INTEGRATION.md)** - CIP File Object implementation and Message Router modifications
 - **[NAU7802 Driver](components/nau7802/README.md)** - NAU7802 scale driver documentation
 - **[Web UI Component](components/webui/README.md)** - Web interface component documentation
 

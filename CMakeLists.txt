@@ -105,10 +105,45 @@ add_custom_command(
     VERBATIM
 )
 
-# Create a target for the embedded EDS file generation that runs early
-add_custom_target(generate_embedded_eds ALL
-    DEPENDS "${EMBEDDED_EDS_HEADER}" "${EMBEDDED_EDS_SOURCE}"
+# Generate embedded icon GZ file for File Object instance 201
+# Create GZ file from favicon.ico with ESP32P4-EIP.ico inside, then embed it
+set(FAVICON_ICO_PATH "${CMAKE_SOURCE_DIR}/eds/favicon.ico")
+set(ICON_GZ_FILE_PATH "${OPENER_BUILD_DIR}/EDSCollection.gz")
+set(EMBEDDED_ICON_HEADER "${OPENER_BUILD_DIR}/embedded_icon_file.h")
+set(EMBEDDED_ICON_SOURCE "${OPENER_BUILD_DIR}/embedded_icon_file.c")
+set(CREATE_ICON_GZ_SCRIPT "${CMAKE_SOURCE_DIR}/components/opener/src/cip_objects/OpENerFileObject/create_icon_gz.py")
+set(EMBED_ICON_GZ_SCRIPT "${CMAKE_SOURCE_DIR}/components/opener/src/cip_objects/OpENerFileObject/embed_icon_gz.py")
+
+# Step 1: Create GZ file from favicon.ico (with ESP32P4-EIP.ico inside)
+add_custom_command(
+    OUTPUT "${ICON_GZ_FILE_PATH}"
+    COMMAND ${PYTHON_CMD} "${CREATE_ICON_GZ_SCRIPT}"
+            "${FAVICON_ICO_PATH}"
+            "${ICON_GZ_FILE_PATH}"
+    DEPENDS "${CREATE_ICON_GZ_SCRIPT}" "${FAVICON_ICO_PATH}"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Creating EDSCollection.gz from favicon.ico"
+    VERBATIM
 )
 
-# Ensure the opener component builds after the EDS files are generated
+# Step 2: Embed the GZ file into C source
+add_custom_command(
+    OUTPUT "${EMBEDDED_ICON_HEADER}" "${EMBEDDED_ICON_SOURCE}"
+    COMMAND ${PYTHON_CMD} "${EMBED_ICON_GZ_SCRIPT}"
+            "${ICON_GZ_FILE_PATH}"
+            "${EMBEDDED_ICON_HEADER}"
+            "${EMBEDDED_ICON_SOURCE}"
+    DEPENDS "${EMBED_ICON_GZ_SCRIPT}" "${ICON_GZ_FILE_PATH}"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Generating embedded icon GZ file from ${ICON_GZ_FILE_PATH}"
+    VERBATIM
+)
+
+# Create a target for the embedded EDS and icon file generation that runs early
+add_custom_target(generate_embedded_eds ALL
+    DEPENDS "${EMBEDDED_EDS_HEADER}" "${EMBEDDED_EDS_SOURCE}"
+            "${EMBEDDED_ICON_HEADER}" "${EMBEDDED_ICON_SOURCE}"
+)
+
+# Ensure the opener component builds after the EDS and icon files are generated
 add_dependencies(__idf_opener generate_embedded_eds)
