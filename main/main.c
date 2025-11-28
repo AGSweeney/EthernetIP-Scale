@@ -1242,22 +1242,8 @@ static void got_ip_event_handler(void *arg, esp_event_base_t event_base,
                 }
             }
             
-            // Start NAU7802 scale reading task if initialized
-            // Delete old task if it exists (e.g., on reinitialization)
-            if (s_nau7802_task_handle != NULL) {
-                vTaskDelete(s_nau7802_task_handle);
-                s_nau7802_task_handle = NULL;
-                ESP_LOGI(TAG, "Deleted old NAU7802 task");
-            }
-            
-            if (s_nau7802_initialized) {
-                xTaskCreate(nau7802_scale_task, "nau7802_task", 4096, NULL, 5, &s_nau7802_task_handle);
-                if (s_nau7802_task_handle == NULL) {
-                    ESP_LOGW(TAG, "Failed to create NAU7802 task");
-                } else {
-                    ESP_LOGI(TAG, "NAU7802 scale reading task started");
-                }
-            }
+            // Note: NAU7802 scale reading task is now created after NAU7802 initialization
+            // (in init_services() after NAU7802 begin() succeeds)
             
             s_services_initialized = true;
             ESP_LOGI(TAG, "All services initialized");
@@ -1486,6 +1472,21 @@ void app_main(void)
                             s_nau7802_initialized = true;
                         }
                         ESP_LOGI(TAG, "NAU7802 initialized successfully");
+                        
+                        // Start NAU7802 scale reading task now that device is initialized
+                        // Delete old task if it exists (e.g., on reinitialization)
+                        if (s_nau7802_task_handle != NULL) {
+                            vTaskDelete(s_nau7802_task_handle);
+                            s_nau7802_task_handle = NULL;
+                            ESP_LOGI(TAG, "Deleted old NAU7802 task");
+                        }
+                        
+                        xTaskCreate(nau7802_scale_task, "nau7802_task", 4096, NULL, 5, &s_nau7802_task_handle);
+                        if (s_nau7802_task_handle == NULL) {
+                            ESP_LOGW(TAG, "Failed to create NAU7802 task");
+                        } else {
+                            ESP_LOGI(TAG, "NAU7802 scale reading task started");
+                        }
                     } else {
                         ESP_LOGE(TAG, "NAU7802 begin() failed: %s", esp_err_to_name(nau_err));
                     }
