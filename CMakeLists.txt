@@ -79,3 +79,36 @@ if(idf_component_main)
     # This ensures the copy runs after linking
     add_dependencies(copy_firmware_image ${idf_component_main})
 endif()
+
+# Generate embedded EDS file for File Object
+# This must be done in the main CMakeLists.txt to avoid ESP-IDF component requirements phase restrictions
+set(EDS_FILE_PATH "${CMAKE_SOURCE_DIR}/eds/ESP32P4_OPENER.eds")
+# Use the build directory for the opener component (matching path in component CMakeLists.txt)
+set(OPENER_BUILD_DIR "${CMAKE_BINARY_DIR}/opener")
+set(EMBEDDED_EDS_HEADER "${OPENER_BUILD_DIR}/embedded_eds_file.h")
+set(EMBEDDED_EDS_SOURCE "${OPENER_BUILD_DIR}/embedded_eds_file.c")
+set(EMBED_EDS_SCRIPT "${CMAKE_SOURCE_DIR}/components/opener/src/cip_objects/OpENerFileObject/embed_eds.py")
+
+# Ensure the directory exists (component CMakeLists.txt also creates it, but this ensures it's early)
+file(MAKE_DIRECTORY "${OPENER_BUILD_DIR}")
+
+# Generate embedded EDS file during build
+add_custom_command(
+    OUTPUT "${EMBEDDED_EDS_HEADER}" "${EMBEDDED_EDS_SOURCE}"
+    COMMAND ${PYTHON_CMD} "${EMBED_EDS_SCRIPT}"
+            "${EDS_FILE_PATH}"
+            "${EMBEDDED_EDS_HEADER}"
+            "${EMBEDDED_EDS_SOURCE}"
+    DEPENDS "${EDS_FILE_PATH}"
+            "${EMBED_EDS_SCRIPT}"
+    COMMENT "Embedding EDS file into build"
+    VERBATIM
+)
+
+# Create a target for the embedded EDS file generation that runs early
+add_custom_target(generate_embedded_eds ALL
+    DEPENDS "${EMBEDDED_EDS_HEADER}" "${EMBEDDED_EDS_SOURCE}"
+)
+
+# Ensure the opener component builds after the EDS files are generated
+add_dependencies(__idf_opener generate_embedded_eds)

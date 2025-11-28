@@ -41,6 +41,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE  /* For memmem() */
+#endif
 
 // Forward declarations for assembly access
 extern uint8_t g_assembly_data064[32];
@@ -421,41 +424,45 @@ static esp_err_t api_ota_update_handler(httpd_req_t *req)
             timeout_count = 0; // Reset timeout counter on successful read
             
             // Search for boundary markers in this chunk
-            // Look for both start boundary (--boundary) and end boundary (--boundary--)
+            // Only search near the end of chunks to avoid false positives in binary data
+            // Binary firmware can contain any byte sequence, so we need to be careful
             char *boundary_pos = NULL;
             size_t to_write = ret;
             bool found_end = false;
             
-            // First check for end boundary (--boundary--)
-            char *search_start = chunk_buffer;
-            while ((search_start = strstr(search_start, end_boundary)) != NULL) {
-                // Check if this is actually a boundary (should be preceded by \r\n or at start)
-                if (search_start == chunk_buffer || 
-                    (search_start > chunk_buffer && 
-                     (search_start[-1] == '\n' || (search_start[-1] == '\r' && search_start > chunk_buffer + 1 && search_start[-2] == '\n')))) {
-                    boundary_pos = search_start;
+            // Only search for boundaries in the last 256 bytes of the chunk to avoid false positives
+            // Boundaries are typically at the end of the data
+            size_t search_start_offset = (ret > 256) ? (ret - 256) : 0;
+            char *search_start = chunk_buffer + search_start_offset;
+            size_t search_len = ret - search_start_offset;
+            
+            // First check for end boundary (--boundary--) - this is the final boundary
+            char *end_match = (char *)memmem(search_start, search_len, end_boundary, strlen(end_boundary));
+            if (end_match != NULL) {
+                // Verify it's actually a boundary by checking for \r\n before it
+                if (end_match == chunk_buffer || 
+                    (end_match > chunk_buffer && end_match[-1] == '\n' && 
+                     (end_match == chunk_buffer + 1 || end_match[-2] == '\r'))) {
+                    boundary_pos = end_match;
                     found_end = true;
-                    break;
                 }
-                search_start++;
             }
             
             // If not found, check for start boundary (--boundary) - this indicates next part
             if (boundary_pos == NULL) {
-                search_start = chunk_buffer;
-                while ((search_start = strstr(search_start, start_boundary)) != NULL) {
-                    // Check if this is actually a boundary (should be preceded by \r\n or at start)
-                    if (search_start == chunk_buffer || 
-                        (search_start > chunk_buffer && 
-                         (search_start[-1] == '\n' || (search_start[-1] == '\r' && search_start > chunk_buffer + 1 && search_start[-2] == '\n')))) {
-                        // Make sure it's not the end boundary (which is longer)
+                char *start_match = (char *)memmem(search_start, search_len, start_boundary, strlen(start_boundary));
+                if (start_match != NULL) {
+                    // Verify it's actually a boundary by checking for \r\n before it
+                    if (start_match == chunk_buffer || 
+                        (start_match > chunk_buffer && start_match[-1] == '\n' && 
+                         (start_match == chunk_buffer + 1 || start_match[-2] == '\r'))) {
+                        // Make sure it's not the end boundary (which starts with the same string)
                         size_t end_boundary_len = strlen(end_boundary);
-                        if (strncmp(search_start, end_boundary, end_boundary_len) != 0) {
-                            boundary_pos = search_start;
-                            break;
+                        if (start_match + end_boundary_len > chunk_buffer + ret || 
+                            memcmp(start_match, end_boundary, end_boundary_len) != 0) {
+                            boundary_pos = start_match;
                         }
                     }
-                    search_start++;
                 }
             }
             

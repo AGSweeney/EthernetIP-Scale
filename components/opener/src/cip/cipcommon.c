@@ -33,7 +33,7 @@
 #include "cipstring.h"
 
 #if defined(CIP_FILE_OBJECT) && 0 != CIP_FILE_OBJECT
-  #include "OpENerFileObject/cipfile.h"
+  #include "cipfile.h"
 #endif
 
 #if defined(CIP_SECURITY_OBJECTS) && 0 != CIP_SECURITY_OBJECTS
@@ -108,6 +108,13 @@ EipStatus NotifyClass(const CipClass *RESTRICT const cip_class,
   /* find the instance: if instNr==0, the class is addressed, else find the instance */
   CipInstanceNum instance_number =
     message_router_request->request_path.instance_number;                           /* get the instance number */
+  
+  /* Log File Object requests for debugging */
+  if(cip_class->class_code == 0x37) { /* File Object class code */
+    OPENER_TRACE_ERR("File Object request: class=0x%x, instance=%d, service=0x%02x\n",
+                     (unsigned)cip_class->class_code, instance_number, message_router_request->service);
+  }
+  
   CipInstance *instance = GetCipInstance(cip_class, instance_number); /* look up the instance (note that if inst==0 this will be the class itself) */
   if(instance) /* if instance is found */
   {
@@ -132,11 +139,22 @@ EipStatus NotifyClass(const CipClass *RESTRICT const cip_class,
           service++;
         }
       }
-    } OPENER_TRACE_WARN(
-      "notify: service 0x%x not supported\n", message_router_request->service);
+    } 
+    /* Log File Object service errors */
+    if(cip_class->class_code == 0x37) {
+      OPENER_TRACE_ERR("File Object: service 0x%02x not supported for instance %d\n", 
+                       message_router_request->service, instance_number);
+    } else {
+      OPENER_TRACE_WARN("notify: service 0x%x not supported\n", message_router_request->service);
+    }
     message_router_response->general_status = kCipErrorServiceNotSupported; /* if no services or service not found, return an error reply*/
   } else {
-    OPENER_TRACE_WARN("notify: instance number %d unknown\n", instance_number);
+    /* Log File Object instance errors */
+    if(cip_class->class_code == 0x37) {
+      OPENER_TRACE_ERR("File Object: instance number %d unknown\n", instance_number);
+    } else {
+      OPENER_TRACE_WARN("notify: instance number %d unknown\n", instance_number);
+    }
     /* if instance not found, return an error reply */
     message_router_response->general_status = kCipErrorPathDestinationUnknown;
     /* according to the test tool this is the correct error flag instead of CIP_ERROR_OBJECT_DOES_NOT_EXIST */
@@ -542,6 +560,12 @@ EipStatus GetAttributeSingle(CipInstance *RESTRICT const instance,
 
   EipUint16 attribute_number =
     message_router_request->request_path.attribute_number;
+  
+  /* Log File Object attribute requests */
+  if(instance->cip_class->class_code == 0x37) { /* File Object class code */
+    OPENER_TRACE_ERR("File Object GetAttributeSingle: instance=%d, attribute=%d\n",
+                     instance->instance_number, attribute_number);
+  }
 
   if( (NULL != attribute) && (NULL != attribute->data) ) {
     uint8_t get_bit_mask =
@@ -562,6 +586,40 @@ EipStatus GetAttributeSingle(CipInstance *RESTRICT const instance,
       OPENER_ASSERT(NULL != attribute);
       attribute->encode(attribute->data, &message_router_response->message);
       message_router_response->general_status = kCipErrorSuccess;
+      
+      /* Log File Object attribute success with value for key attributes */
+      if(instance->cip_class->class_code == 0x37) {
+        if(attribute_number == 1) {
+          /* State attribute */
+          CipUsint *state = (CipUsint *)attribute->data;
+          OPENER_TRACE_ERR("File Object GetAttributeSingle: instance=%d, attribute=%d (State), value=%d, status=SUCCESS\n",
+                           instance->instance_number, attribute_number, *state);
+        } else if(attribute_number == 4) {
+          /* File Name attribute - log the actual file name */
+          CipStringI *file_name = (CipStringI *)attribute->data;
+          if(file_name && file_name->number_of_strings > 0 && file_name->array_of_string_i_structs) {
+            CipShortString *short_str = (CipShortString *)file_name->array_of_string_i_structs[0].string;
+            if(short_str && short_str->string) {
+              OPENER_TRACE_ERR("File Object GetAttributeSingle: instance=%d, attribute=%d (FileName), value=\"%.*s\", status=SUCCESS\n",
+                               instance->instance_number, attribute_number, short_str->length, short_str->string);
+            } else {
+              OPENER_TRACE_ERR("File Object GetAttributeSingle: instance=%d, attribute=%d (FileName), value=(empty), status=SUCCESS\n",
+                               instance->instance_number, attribute_number);
+            }
+          } else {
+            OPENER_TRACE_ERR("File Object GetAttributeSingle: instance=%d, attribute=%d (FileName), value=(null), status=SUCCESS\n",
+                             instance->instance_number, attribute_number);
+          }
+        } else if(attribute_number == 6) {
+          /* File Size attribute */
+          CipUdint *file_size = (CipUdint *)attribute->data;
+          OPENER_TRACE_ERR("File Object GetAttributeSingle: instance=%d, attribute=%d (FileSize), value=%lu, status=SUCCESS\n",
+                           instance->instance_number, attribute_number, (unsigned long)*file_size);
+        } else {
+          OPENER_TRACE_ERR("File Object GetAttributeSingle: instance=%d, attribute=%d, status=SUCCESS\n",
+                           instance->instance_number, attribute_number);
+        }
+      }
 
       /* Call the PostGetCallback if enabled for this attribute and the class provides one. */
       if( (attribute->attribute_flags & kPostGetFunc) &&
@@ -570,6 +628,20 @@ EipStatus GetAttributeSingle(CipInstance *RESTRICT const instance,
                                              attribute,
                                              message_router_request->service);
       }
+      
+      return kEipStatusOkSend; /* Return early on success */
+    } else {
+      /* Attribute exists but is not getable */
+      if(instance->cip_class->class_code == 0x37) {
+        OPENER_TRACE_ERR("File Object GetAttributeSingle: instance=%d, attribute=%d, status=NOT_GETABLE\n",
+                         instance->instance_number, attribute_number);
+      }
+    }
+  } else {
+    /* Attribute not found */
+    if(instance->cip_class->class_code == 0x37) {
+      OPENER_TRACE_ERR("File Object GetAttributeSingle: instance=%d, attribute=%d, status=NOT_FOUND\n",
+                       instance->instance_number, attribute_number);
     }
   }
 
