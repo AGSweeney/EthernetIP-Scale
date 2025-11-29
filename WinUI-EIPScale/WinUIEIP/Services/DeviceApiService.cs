@@ -104,10 +104,40 @@ public class DeviceApiService
             var json = JsonSerializer.Serialize(new { enabled });
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync($"{GetBaseUrl()}/api/modbus", content);
-            return response.IsSuccessStatusCode;
+            
+            var responseJson = await response.Content.ReadAsStringAsync();
+            System.Diagnostics.Debug.WriteLine($"SetModbusEnabledAsync: HTTP {response.StatusCode} - {responseJson}");
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                return false;
+            }
+            
+            // Parse response to check status field
+            var result = JsonSerializer.Deserialize<JsonElement>(responseJson);
+            if (result.TryGetProperty("status", out var statusProperty))
+            {
+                var status = statusProperty.GetString();
+                if (status == "ok")
+                {
+                    return true;
+                }
+                else if (status == "error")
+                {
+                    var message = result.TryGetProperty("message", out var msgProperty) 
+                        ? msgProperty.GetString() 
+                        : "Unknown error";
+                    System.Diagnostics.Debug.WriteLine($"SetModbusEnabledAsync: Error status - {message}");
+                    return false;
+                }
+            }
+            
+            // If no status field, assume success if HTTP status was OK
+            return true;
         }
-        catch
+        catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"SetModbusEnabledAsync exception: {ex.Message}");
             return false;
         }
     }
