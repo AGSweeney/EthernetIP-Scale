@@ -1,0 +1,336 @@
+﻿<Page x:Class="EulerLink.Views.Lsm6ds3StatusPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <ScrollViewer>
+        <StackPanel Margin="20,16">
+            <TextBlock Text="LSM6DS3 Status" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,16"/>
+
+            <Border x:ConnectionId='2' x:Name="NotConnectedWarningBorder"
+                    BorderBrush="#0066CC"
+                    BorderThickness="2"
+                    CornerRadius="4"
+                    Background="#E6F2FF"
+                    Padding="12"
+                    Margin="0,0,0,16"
+                    Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="ℹ️" FontSize="20" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="Not connected to device. Please connect to a device in the sidebar to view LSM6DS3 status."
+                               FontWeight="SemiBold"
+                               Foreground="#003366"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <StackPanel x:ConnectionId='3' x:Name="Lsm6ds3ContentPanel">
+            <Border x:ConnectionId='4' x:Name="DisabledWarningBorder"
+                    BorderBrush="#FFD700"
+                    BorderThickness="2"
+                    CornerRadius="4"
+                    Background="#FFFACD"
+                    Padding="12"
+                    Margin="0,0,0,16"
+                    Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="⚠️" FontSize="20" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="LSM6DS3 Sensor is disabled. Enable it in the Configuration page to view sensor data."
+                               FontWeight="SemiBold"
+                               Foreground="#8B4513"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <Border x:ConnectionId='5' x:Name="Lsm6ds3ReadingsBorder"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                    BorderThickness="1" 
+                    CornerRadius="4" 
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    Padding="0"
+                    Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="Sensor Readings" 
+                               FontWeight="SemiBold" 
+                               FontSize="16" 
+                               Margin="12,12,12,8"/>
+                    
+                    <!-- Angle Gauges -->
+                    <Grid Margin="12,0,12,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Roll Gauge -->
+                        <Border Grid.Column="0" 
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                Padding="12">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="Roll" 
+                                           FontWeight="SemiBold" 
+                                           FontSize="14" 
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,8"/>
+                                <Grid Width="150" Height="150" HorizontalAlignment="Center">
+                                    <!-- Gauge Background Circle -->
+                                    <Ellipse Width="150" Height="150" 
+                                             Stroke="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                             StrokeThickness="2"
+                                             Fill="Transparent"/>
+                                    
+                                    <!-- Needle -->
+                                    <Line x:ConnectionId='14' x:Name="RollNeedle"
+                                          X1="75" Y1="75"
+                                          X2="75" Y2="130"
+                                          Stroke="{ThemeResource SystemAccentColor}"
+                                          StrokeThickness="3"/>
+                                    
+                                    <!-- Center Dot -->
+                                    <Ellipse Width="8" Height="8" 
+                                             Fill="{ThemeResource SystemAccentColor}"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center"/>
+                                    
+                                    <!-- Value Display -->
+                                    <TextBlock x:ConnectionId='15' x:Name="RollGaugeValueTextBlock"
+                                               Text="0°"
+                                               FontSize="18"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Margin="0,80,0,0"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Pitch Gauge -->
+                        <Border Grid.Column="2" 
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                Padding="12">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="Pitch" 
+                                           FontWeight="SemiBold" 
+                                           FontSize="14" 
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,8"/>
+                                <Grid Width="150" Height="150" HorizontalAlignment="Center">
+                                    <!-- Gauge Background Circle -->
+                                    <Ellipse Width="150" Height="150" 
+                                             Stroke="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                             StrokeThickness="2"
+                                             Fill="Transparent"/>
+                                    
+                                    <!-- Needle -->
+                                    <Line x:ConnectionId='12' x:Name="PitchNeedle"
+                                          X1="75" Y1="75"
+                                          X2="75" Y2="130"
+                                          Stroke="{ThemeResource SystemAccentColor}"
+                                          StrokeThickness="3"/>
+                                    
+                                    <!-- Center Dot -->
+                                    <Ellipse Width="8" Height="8" 
+                                             Fill="{ThemeResource SystemAccentColor}"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center"/>
+                                    
+                                    <!-- Value Display -->
+                                    <TextBlock x:ConnectionId='13' x:Name="PitchGaugeValueTextBlock"
+                                               Text="0°"
+                                               FontSize="18"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Margin="0,80,0,0"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Ground Angle Gauge -->
+                        <Border Grid.Column="4" 
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                Padding="12">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="Ground Angle" 
+                                           FontWeight="SemiBold" 
+                                           FontSize="14" 
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,8"/>
+                                <Grid Width="150" Height="150" HorizontalAlignment="Center">
+                                    <!-- Gauge Background Circle -->
+                                    <Ellipse Width="150" Height="150" 
+                                             Stroke="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                             StrokeThickness="2"
+                                             Fill="Transparent"/>
+                                    
+                                    <!-- Needle -->
+                                    <Line x:ConnectionId='10' x:Name="GroundAngleNeedle"
+                                          X1="75" Y1="75"
+                                          X2="75" Y2="130"
+                                          Stroke="{ThemeResource SystemAccentColor}"
+                                          StrokeThickness="3"/>
+                                    
+                                    <!-- Center Dot -->
+                                    <Ellipse Width="8" Height="8" 
+                                             Fill="{ThemeResource SystemAccentColor}"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center"/>
+                                    
+                                    <!-- Value Display -->
+                                    <TextBlock x:ConnectionId='11' x:Name="GroundAngleGaugeValueTextBlock"
+                                               Text="0°"
+                                               FontSize="18"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Margin="0,80,0,0"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- Pressure Gauges -->
+                    <Grid Margin="12,0,12,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Bottom Pressure Bar Chart -->
+                        <Border Grid.Column="0" 
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                Padding="16"
+                                Margin="0,0,0,16">
+                            <StackPanel>
+                                <TextBlock Text="Bottom Pressure" 
+                                           FontWeight="SemiBold" 
+                                           FontSize="14" 
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,12"/>
+                                
+                                <!-- Bar Chart Container -->
+                                <Grid>
+                                    <!-- Background Bar -->
+                                    <Border Height="40"
+                                            BorderBrush="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                            BorderThickness="2"
+                                            CornerRadius="4"
+                                            Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"/>
+                                    
+                                    <!-- Value Bar -->
+                                    <Border x:ConnectionId='8' x:Name="BottomPressureBar"
+                                            Height="40"
+                                            HorizontalAlignment="Left"
+                                            CornerRadius="4"
+                                            Background="{ThemeResource SystemAccentColor}"
+                                            Width="0"/>
+                                    
+                                    <!-- Value Text -->
+                                    <TextBlock x:ConnectionId='9' x:Name="BottomPressureGaugeValueTextBlock"
+                                               Text="0.0 PSI"
+                                               FontSize="16"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
+                                </Grid>
+                                
+                                <!-- Scale Labels -->
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="0" 
+                                               FontSize="11" 
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Grid.Column="1" Text="100 PSI" 
+                                               FontSize="11" 
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                               HorizontalAlignment="Right"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Top Pressure Bar Chart -->
+                        <Border Grid.Column="2" 
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                Padding="16"
+                                Margin="0,0,0,16">
+                            <StackPanel>
+                                <TextBlock Text="Top Pressure" 
+                                           FontWeight="SemiBold" 
+                                           FontSize="14" 
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,12"/>
+                                
+                                <!-- Bar Chart Container -->
+                                <Grid>
+                                    <!-- Background Bar -->
+                                    <Border Height="40"
+                                            BorderBrush="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                            BorderThickness="2"
+                                            CornerRadius="4"
+                                            Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"/>
+                                    
+                                    <!-- Value Bar -->
+                                    <Border x:ConnectionId='6' x:Name="TopPressureBar"
+                                            Height="40"
+                                            HorizontalAlignment="Left"
+                                            CornerRadius="4"
+                                            Background="{ThemeResource SystemAccentColor}"
+                                            Width="0"/>
+                                    
+                                    <!-- Value Text -->
+                                    <TextBlock x:ConnectionId='7' x:Name="TopPressureGaugeValueTextBlock"
+                                               Text="0.0 PSI"
+                                               FontSize="16"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
+                                </Grid>
+                                
+                                <!-- Scale Labels -->
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="0" 
+                                               FontSize="11" 
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Grid.Column="1" Text="100 PSI" 
+                                               FontSize="11" 
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                               HorizontalAlignment="Right"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </Border>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>
+
+

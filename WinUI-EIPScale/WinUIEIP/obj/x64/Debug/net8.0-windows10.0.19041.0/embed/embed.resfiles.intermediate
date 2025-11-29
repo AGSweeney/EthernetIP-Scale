@@ -1,0 +1,9 @@
+App.xbf
+MainWindow.xbf
+Views\ConfigurationPage.xbf
+Views\DeviceDiscoveryDialog.xbf
+Views\FirmwareUpdatePage.xbf
+Views\InputAssemblyPage.xbf
+Views\LogsPage.xbf
+Views\Nau7802StatusPage.xbf
+Views\OutputAssemblyPage.xbf
