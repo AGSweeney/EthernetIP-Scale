@@ -2,6 +2,10 @@
  * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * MODIFICATIONS:
+ * - Reduced log level when IP is 0.0.0.0 (expected during ACD conflict detection)
+ * - Modified by: Adam G. Sweeney <agsweeney@gmail.com>
  */
 
 #include <string.h>
@@ -76,10 +80,6 @@ void esp_netif_action_connected(void *esp_netif, esp_event_base_t base, int32_t 
                                                     &evt, sizeof(evt), 0), ESP_OK);
             ESP_LOGD(TAG, "static ip: ip changed=%s", evt.ip_changed ? "true":"false");
         } else {
-            // MODIFICATION: Reduce log level when IP is 0.0.0.0 (expected during ACD)
-            // Added by: Adam G. Sweeney <agsweeney@gmail.com>
-            // When ACD is enabled, IP assignment is deferred until ACD completes,
-            // so IP will be 0.0.0.0 initially. This is expected and not an error.
 #if CONFIG_LWIP_IPV4
             if (ip.ip.addr == 0) {
                 ESP_LOGD(TAG, "static ip not yet assigned (ACD may be pending)");

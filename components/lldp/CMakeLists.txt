@@ -1,0 +1,29 @@
+    idf_component_register(
+        SRCS
+            "src/lldp_component.c"
+            "src/ciplldpmanagement.c"
+            "src/ciplldpdatatable.c"
+            "src/ciplldpdatatable_instance.c"
+            "src/lldp_transmission.c"
+            "src/lldp_neighbor_db.c"
+            "src/lldp_reception.c"
+            "src/esp32/lldp_raw_socket.c"
+            "src/esp32/lldp_frame_builder.c"
+            "src/esp32/lldp_tlv_decoder.c"
+            "src/esp32/nvlldpmanagement.c"
+    INCLUDE_DIRS
+        "include"
+    PRIV_INCLUDE_DIRS
+        "src/esp32"
+    REQUIRES
+        lwip
+        freertos
+        esp_netif
+        opener
+        nvs_flash
+    PRIV_REQUIRES
+        lwip
+        freertos
+        esp_netif
+)
+

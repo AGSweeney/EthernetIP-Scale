@@ -126,6 +126,9 @@ add_custom_command(
     VERBATIM
 )
 
+# Mark the intermediate GZ file as GENERATED so CMake knows it's build output
+set_source_files_properties("${ICON_GZ_FILE_PATH}" PROPERTIES GENERATED TRUE)
+
 # Step 2: Embed the GZ file into C source
 add_custom_command(
     OUTPUT "${EMBEDDED_ICON_HEADER}" "${EMBEDDED_ICON_SOURCE}"
@@ -138,6 +141,9 @@ add_custom_command(
     COMMENT "Generating embedded icon GZ file from ${ICON_GZ_FILE_PATH}"
     VERBATIM
 )
+
+# Mark the generated C files as GENERATED so CMake knows they're build output
+set_source_files_properties("${EMBEDDED_ICON_HEADER}" "${EMBEDDED_ICON_SOURCE}" PROPERTIES GENERATED TRUE)
 
 # Create a target for the embedded EDS and icon file generation that runs early
 add_custom_target(generate_embedded_eds ALL

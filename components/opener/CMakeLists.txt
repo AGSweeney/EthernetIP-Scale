@@ -110,6 +110,7 @@ idf_component_register(
         driver
         nvs_flash
         system_config
+        lldp
     PRIV_REQUIRES
         lwip
         freertos

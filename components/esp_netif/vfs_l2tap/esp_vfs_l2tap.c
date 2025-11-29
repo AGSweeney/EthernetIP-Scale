@@ -2,6 +2,10 @@
  * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * MODIFICATIONS:
+ * - Reduced log level for "vfs is already registered" message (expected case)
+ * - Modified by: Adam G. Sweeney <agsweeney@gmail.com>
  */
 
 #include <stdio.h>
@@ -801,7 +805,11 @@ esp_err_t esp_vfs_l2tap_intf_register(l2tap_vfs_config_t *config)
         config = &def_config;
     }
 
-    ESP_RETURN_ON_FALSE(!s_is_registered, ESP_ERR_INVALID_STATE, TAG, "vfs is already registered");
+    if (s_is_registered) {
+        ESP_LOGD(TAG, "vfs is already registered (expected behavior)");
+        return ESP_ERR_INVALID_STATE;
+    }
+    
     s_is_registered = true;
     ESP_RETURN_ON_ERROR(esp_vfs_register_fs(config->base_path, &s_vfs_l2tap, ESP_VFS_FLAG_STATIC, NULL), TAG, "vfs register error");
 

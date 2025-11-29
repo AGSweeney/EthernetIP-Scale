@@ -18,6 +18,8 @@
 #include "freertos/semphr.h"
 #include "freertos/portable.h"
 #include "esp_random.h"
+#include "opener_user_conf.h"
+#include "lldp.h"
 
 #define OPENER_THREAD_PRIO			5
 #define OPENER_STACK_SIZE			  8192  // Increased from 2000 to prevent stack overflow
@@ -85,13 +87,29 @@ void opener_init(struct netif *netif) {
     }
 
     eip_status = NetworkHandlerInitialize();
+    if (eip_status != kEipStatusOk) {
+      OPENER_TRACE_ERR("NetworkHandlerInitialize failed with status %d\n", eip_status);
+    }
+    
+    // Initialize LLDP component (if enabled)
+    #if OPENER_LLDP_ENABLED
+    OPENER_TRACE_INFO("Initializing LLDP component...\n");
+    EipStatus lldp_status = LldpComponentInit(netif);
+    if (lldp_status != kEipStatusOk) {
+      OPENER_TRACE_WARN("LLDP component initialization failed with status %d\n", lldp_status);
+    } else {
+      OPENER_TRACE_INFO("LLDP component initialization succeeded\n");
+    }
+    #endif
   }
   else {
     OPENER_TRACE_WARN("Network link is down, OpENer not started\n");
     g_end_stack = 1;
   }
+  OPENER_TRACE_INFO("Opener init: g_end_stack=%d, eip_status=%d\n", g_end_stack, eip_status);
   if ((g_end_stack == 0) && (eip_status == kEipStatusOk)) {
     // Pin OpENer task to Core 0 (same as LWIP TCP/IP task)
+    OPENER_TRACE_INFO("Creating OpENer task...\n");
     BaseType_t result = xTaskCreatePinnedToCore(opener_thread,
                                                  "OpENer",
                                                  OPENER_STACK_SIZE,
@@ -104,10 +122,10 @@ void opener_init(struct netif *netif) {
       OPENER_TRACE_INFO("OpENer: opener_thread started on Core 0, free heap size: %d\n",
              xPortGetFreeHeapSize());
     } else {
-      OPENER_TRACE_ERR("Failed to create OpENer task\n");
+      OPENER_TRACE_ERR("Failed to create OpENer task (result=%d)\n", result);
     }
   } else {
-    OPENER_TRACE_ERR("NetworkHandlerInitialize error %d\n", eip_status);
+    OPENER_TRACE_ERR("Opener init failed: g_end_stack=%d, eip_status=%d\n", g_end_stack, eip_status);
   }
 
   xSemaphoreGive(opener_init_mutex);
@@ -127,6 +145,11 @@ static void opener_thread(void *argument) {
   }
   NetworkHandlerFinish();
   ShutdownCipStack();
+  
+  // Cleanup LLDP component
+  #if OPENER_LLDP_ENABLED
+  LldpComponentDeinit();
+  #endif
   
   // Mark as not initialized and clear task handle atomically
   if (opener_init_mutex != NULL) {

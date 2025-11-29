@@ -18,9 +18,37 @@ This project implements a full-featured EtherNet/IP adapter device on the ESP32-
   - Output Assembly 150 (32 bytes)
   - Configuration Assembly 151 (10 bytes)
   - Support for Exclusive Owner, Input Only, and Listen Only connections
-  - **CIP File Object (Class 0x37)**: Embedded EDS file serving for automatic device discovery
-    - Instance 200: EDS file ("EDS.txt") - automatically downloadable by RSLinx and Others
-    - Instance 201: Icon file ("EDSCollection.gz") - device icon for configuration tools
+
+- **CIP File Object (Class 0x37)**: Embedded EDS file serving for automatic device discovery
+  - Instance 200: EDS file ("EDS.txt") - automatically downloadable by RSLinx and Others
+  - Instance 201: Icon file ("EDSCollection.gz") - device icon for configuration tools
+
+- **LLDP (Link Layer Discovery Protocol) Support**: IEEE 802.1AB compliant neighbor discovery
+  - **LLDP Support**: Full LLDP implementation for neighbor discovery on Ethernet networks
+  - **CIP Objects**: LLDP Management Object (Class 0x109) and LLDP Data Table Object (Class 0x10A)
+  - **Transmission**: Periodic LLDP frame transmission (configurable interval, default 30 seconds)
+  - **Reception**: Automatic neighbor discovery and database management
+  - **ESP-NETIF L2 TAP Integration**: Raw Ethernet frame access for LLDP frames (EtherType 0x88CC)
+  - **Multicast MAC Filtering**: Hardware-level filtering for LLDP multicast address (01:80:c2:00:00:0e)
+  - **Persistent Configuration**: LLDP settings stored in NVS and configurable via CIP services
+  - **Neighbor Information**: System name, description, capabilities, management IP, and TTL tracking
+
+- **RFC 5227 Compliant Network Configuration**: Address Conflict Detection (ACD)
+  - RFC 5227 compliant static IP assignment (implemented in application layer)
+  - **ACD Control via Attribute #10**: ACD can be enabled/disabled via EtherNet/IP TCP/IP Interface Object Attribute #10 (`select_acd`)
+  - **Persistent Setting**: ACD setting persists across reboots (stored in NVS)
+  - **Applies to Both Static IP and DHCP**: ACD setting controls conflict detection for both configuration methods
+  - ACD probe sequence runs **before** IP assignment (deferred assignment) when enabled
+  - Natural ACD state machine flow (PROBE_WAIT → PROBING → ANNOUNCE_WAIT → ANNOUNCING → ONGOING)
+  - Probe sequence: 3 probes from `0.0.0.0` + 4 announcements (~6-10 seconds total)
+  - IP assigned only after ACD confirms no conflict (ACD_IP_OK callback) when enabled
+  - Callback tracking mechanism prevents false positive conflict detection on timeout
+  - Configurable ACD timing parameters (probe intervals, announcement intervals, defensive ARP intervals)
+  - Active IP defense with periodic ARP probes from `0.0.0.0` (matching Rockwell PLC behavior)
+  - ACD retry logic with configurable delay and max attempts
+  - User LED indication (GPIO27): blinks during normal operation, solid on ACD conflict
+  - **EtherNet/IP Conflict Reporting**: Automatic capture and storage of conflict data in TCP/IP Interface Object Attribute #11
+  - Custom lwIP modifications for EtherNet/IP requirements
 
 - **Modbus TCP Server**: Standard Modbus TCP/IP server (port 502)
   - Input Registers 0-15 map to Input Assembly 100
@@ -45,24 +73,6 @@ This project implements a full-featured EtherNet/IP adapter device on the ESP32-
   - File upload via web interface
   - URL-based downloads
   - Automatic rollback on failure
-
-
-- **RFC 5227 Compliant Network Configuration**: Address Conflict Detection (ACD)
-  - RFC 5227 compliant static IP assignment (implemented in application layer)
-  - **ACD Control via Attribute #10**: ACD can be enabled/disabled via EtherNet/IP TCP/IP Interface Object Attribute #10 (`select_acd`)
-  - **Persistent Setting**: ACD setting persists across reboots (stored in NVS)
-  - **Applies to Both Static IP and DHCP**: ACD setting controls conflict detection for both configuration methods
-  - ACD probe sequence runs **before** IP assignment (deferred assignment) when enabled
-  - Natural ACD state machine flow (PROBE_WAIT → PROBING → ANNOUNCE_WAIT → ANNOUNCING → ONGOING)
-  - Probe sequence: 3 probes from `0.0.0.0` + 4 announcements (~6-10 seconds total)
-  - IP assigned only after ACD confirms no conflict (ACD_IP_OK callback) when enabled
-  - Callback tracking mechanism prevents false positive conflict detection on timeout
-  - Configurable ACD timing parameters (probe intervals, announcement intervals, defensive ARP intervals)
-  - Active IP defense with periodic ARP probes from `0.0.0.0` (matching Rockwell PLC behavior)
-  - ACD retry logic with configurable delay and max attempts
-  - User LED indication (GPIO27): blinks during normal operation, solid on ACD conflict
-  - **EtherNet/IP Conflict Reporting**: Automatic capture and storage of conflict data in TCP/IP Interface Object Attribute #11
-  - Custom lwIP modifications for EtherNet/IP requirements
 
 ## Hardware
 
@@ -156,6 +166,7 @@ ENIP_Scale/
 │   ├── ota_manager/        # OTA update manager
 │   ├── system_config/      # System configuration (NVS)
 │   ├── nau7802/            # NAU7802 scale driver
+│   ├── lldp/               # LLDP (Link Layer Discovery Protocol) component
 │   └── log_buffer/         # Log buffer component
 ├── eds/                     # EtherNet/IP EDS file
 ├── docs/                    # Documentation
@@ -264,6 +275,74 @@ Connection types supported:
 
 **For detailed byte-by-byte assembly data layout, see [docs/ASSEMBLY_DATA_LAYOUT.md](docs/ASSEMBLY_DATA_LAYOUT.md).**
 
+## LLDP (Link Layer Discovery Protocol)
+
+This device implements full LLDP support for automatic neighbor discovery on Ethernet networks, allowing network management tools to discover and display the network topology.
+
+### Overview
+
+LLDP is an IEEE 802.1AB standard protocol that allows devices to advertise their identity, capabilities, and management information to directly connected neighbors on an Ethernet network. This implementation provides:
+
+- **LLDP Frame Transmission**: Periodic transmission of LLDP frames containing device information
+- **LLDP Frame Reception**: Automatic reception and processing of LLDP frames from neighbors
+- **Neighbor Database**: Storage and management of discovered neighbor information
+- **CIP Object Integration**: Full integration with EtherNet/IP CIP services for configuration and status
+
+### CIP Objects
+
+Two CIP objects provide LLDP functionality:
+
+1. **LLDP Management Object (Class 0x109)**: Manages LLDP configuration and status
+   - Attribute 1: `lldp_enable_array` - Enable/disable LLDP per Ethernet link
+   - Attribute 2: `msg_tx_interval` - Transmission interval in seconds (1-65535)
+   - Attribute 3: `msg_tx_hold` - Transmission hold multiplier (1-255)
+   - Attribute 4: `lldp_datastore` - Data store identifier
+   - Attribute 5: `last_change` - Timestamp of last configuration change
+
+2. **LLDP Data Table Object (Class 0x10A)**: Stores discovered neighbor information
+   - Dynamic instances created for each discovered neighbor
+   - Contains neighbor MAC address, Chassis ID, Port ID, System Name/Description, Capabilities, Management IP, and TTL
+
+### Implementation Details
+
+**ESP-NETIF L2 TAP Integration**:
+- Uses ESP-IDF's Layer 2 TAP interface to access raw Ethernet frames
+- Frames are intercepted in `esp_netif_receive` before being passed to the IP stack
+- LLDP frames (EtherType 0x88CC) are filtered and passed to the LLDP reception task
+
+**Multicast MAC Filtering**:
+- LLDP uses multicast MAC address `01:80:c2:00:00:0e` (Nearest Bridge)
+- Ethernet MAC hardware filter configured via `ETH_CMD_ADD_MAC_FILTER` to accept LLDP frames
+- Filter is added during Ethernet link-up event
+
+**Frame Processing**:
+- **Transmission**: FreeRTOS timer triggers periodic frame transmission (default 30 seconds)
+- **Reception**: Dedicated task polls L2 TAP socket for incoming frames (100ms polling interval)
+- **TLV Encoding/Decoding**: Full support for mandatory and optional TLVs:
+  - Mandatory: Chassis ID, Port ID, TTL
+  - Optional: System Name, System Description, System Capabilities, Management Address
+
+**Configuration**:
+- LLDP can be enabled/disabled via `OPENER_LLDP_ENABLED` in `opener_user_conf.h` (default: enabled)
+- Transmission interval configurable via `OPENER_LLDP_TX_INTERVAL_MS` (default: 30000ms)
+- Configuration persists in NVS and is restored on boot
+- Runtime configuration available via CIP services on LLDP Management Object
+
+### Platform-Specific Modifications
+
+The following ESP-IDF components were modified to support LLDP:
+
+1. **`components/esp_netif/lwip/esp_netif_lwip.c`**:
+   - Added L2 TAP filter call in `esp_netif_receive` to intercept frames before IP stack processing
+
+2. **`components/esp_netif/vfs_l2tap/esp_vfs_l2tap.c`**:
+   - Reduced log verbosity for production use
+
+3. **`main/main.c`**:
+   - Added LLDP multicast MAC address to Ethernet MAC filter during link-up event
+
+**For detailed component documentation, see [components/lldp/README.md](components/lldp/README.md).**
+
 ## Web Interface
 
 Access the web interface at `http://<device-ip>/` after the device has obtained an IP address.
@@ -326,8 +405,6 @@ The device implements the CIP File Object (Class 0x37) to serve the EDS file and
 - **Message Router Support**: Message Router instance #1 advertises supported CIP objects (including File Object) for EtherNet/IP Explorer discovery
 
 **File Object Implementation**: This project uses the [OpENer File Object](https://github.com/EIPStackGroup/OpENerFileObject) implementation, which provides an open-source CIP File Object compatible with the OpENer EtherNet/IP stack.
-
-**For detailed implementation documentation, see [docs/FILE_OBJECT_INTEGRATION.md](docs/FILE_OBJECT_INTEGRATION.md).**
 
 ## Custom lwIP Modifications
 
@@ -412,6 +489,16 @@ This project includes a modified version of lwIP from ESP-IDF v5.5.1. The lwIP m
 3. Verify firmware binary is for correct ESP32-P4 variant
 4. Check serial logs for OTA error messages
 
+### LLDP Not Working
+
+1. Verify LLDP is enabled in `opener_user_conf.h` (`OPENER_LLDP_ENABLED` must be 1)
+2. Check that Ethernet link is up (LLDP only works on active Ethernet links)
+3. Verify LLDP multicast MAC filter was added (check serial logs for "LLDP multicast address added to MAC filter")
+4. Use Wireshark to verify LLDP frames are being transmitted (EtherType 0x88CC, destination 01:80:c2:00:00:0e)
+5. Check LLDP Management Object Attribute 1 (`lldp_enable_array`) to ensure LLDP is enabled for the Ethernet link
+6. Verify neighbor devices are also sending LLDP frames
+7. Check LLDP Data Table Object instances to see discovered neighbors
+
 ## References
 
 - [OpENer Documentation](https://github.com/EIPStackGroup/OpENer)
@@ -419,13 +506,14 @@ This project includes a modified version of lwIP from ESP-IDF v5.5.1. The lwIP m
 - [EtherNet/IP Specification](https://www.odva.org/)
 - [Modbus TCP/IP Specification](https://modbus.org/specs.php)
 - [RFC 5227 - IPv4 Address Conflict Detection](https://tools.ietf.org/html/rfc5227)
+- [IEEE 802.1AB - Link Layer Discovery Protocol (LLDP)](https://standards.ieee.org/ieee/802.1AB/3995/)
 
 ## Documentation
 
 - **[Assembly Data Layout](docs/ASSEMBLY_DATA_LAYOUT.md)** - Byte-by-byte assembly data documentation
 - **[API Endpoints](docs/API_Endpoints.md)** - Web UI REST API documentation
 - **[ACD Conflict Reporting](docs/ACD_CONFLICT_REPORTING.md)** - Complete guide to ACD conflict detection and EtherNet/IP integration
-- **[File Object Integration](docs/FILE_OBJECT_INTEGRATION.md)** - CIP File Object implementation and Message Router modifications
+- **[LLDP Component](components/lldp/README.md)** - LLDP (Link Layer Discovery Protocol) component documentation
 - **[NAU7802 Driver](components/nau7802/README.md)** - NAU7802 scale driver documentation
 - **[Web UI Component](components/webui/README.md)** - Web interface component documentation
 
@@ -439,7 +527,7 @@ For issues and questions:
 ---
 
 **Device Name**: ENIP-Scale  
-**Vendor**: AG Sweeney 
+**Vendor**: Adam G. Sweeney 
 
 **Firmware Version**: See git commit or build timestamp
 

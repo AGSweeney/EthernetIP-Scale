@@ -108,8 +108,9 @@ void EncodeMessageRouterSupportedObjects(const void *const data,
     obj = obj->next;
   }
   
-  OPENER_TRACE_ERR("Message Router: Encoding SupportedObjects - class_count=%u, File Object (0x37) %s\n",
-                   class_count, file_object_found ? "FOUND" : "NOT FOUND");
+  // Debug logging removed - use OPENER_TRACE_INFO if needed for debugging
+  // OPENER_TRACE_INFO("Message Router: Encoding SupportedObjects - class_count=%u, File Object (0x37) %s\n",
+  //                  class_count, file_object_found ? "FOUND" : "NOT FOUND");
   
   /* Always update the array to ensure it's current (classes may be registered after initialization) */
   if(instance_data->supported_objects_class_ids != NULL && 
@@ -133,8 +134,9 @@ void EncodeMessageRouterSupportedObjects(const void *const data,
       CipUint idx = 0;
       while(obj != NULL && idx < class_count) {
         instance_data->supported_objects_class_ids[idx] = obj->cip_class->class_code;
-        OPENER_TRACE_ERR("Message Router: Adding class ID %lu (0x%02lX) to array at index %u\n",
-                         (unsigned long)obj->cip_class->class_code, (unsigned long)obj->cip_class->class_code, idx);
+        // Debug logging removed - use OPENER_TRACE_INFO if needed for debugging
+        // OPENER_TRACE_INFO("Message Router: Adding class ID %lu (0x%02lX) to array at index %u\n",
+        //                  (unsigned long)obj->cip_class->class_code, (unsigned long)obj->cip_class->class_code, idx);
         obj = obj->next;
         idx++;
       }
@@ -153,16 +155,17 @@ void EncodeMessageRouterSupportedObjects(const void *const data,
    * Note: The STRUCT format is: ArrayLen, Array elements, MaxConnectionsSupported, NumberOfCurrentConnections
    * The "Number" field is not encoded separately - it's just the array length */
   if(instance_data->supported_objects_class_ids != NULL) {
-    OPENER_TRACE_ERR("Message Router: Encoding ClassesId array - length=%u, classes: ", instance_data->supported_objects_number);
+    // Debug logging removed - use OPENER_TRACE_INFO if needed for debugging
+    // OPENER_TRACE_INFO("Message Router: Encoding ClassesId array - length=%u, classes: ", instance_data->supported_objects_number);
     AddIntToMessage(instance_data->supported_objects_number, outgoing_message); /* Array length */
     for(CipUint i = 0; i < instance_data->supported_objects_number; i++) {
-      OPENER_TRACE_ERR("%u ", instance_data->supported_objects_class_ids[i]);
+      // OPENER_TRACE_INFO("%u ", instance_data->supported_objects_class_ids[i]);
       AddIntToMessage(instance_data->supported_objects_class_ids[i], outgoing_message);
     }
-    OPENER_TRACE_ERR("(encoded %u elements)\n", instance_data->supported_objects_number);
+    // OPENER_TRACE_INFO("(encoded %u elements)\n", instance_data->supported_objects_number);
   } else {
     AddIntToMessage(0, outgoing_message); /* Empty array */
-    OPENER_TRACE_ERR("Message Router: ERROR - ClassesId array is NULL!\n");
+    OPENER_TRACE_ERR("Message Router: ERROR - ClassesId array is NULL!\n");  // Keep this as ERROR
   }
   
   /* Encode STRUCT: MaxConnectionsSupported (UINT) */
@@ -172,12 +175,13 @@ void EncodeMessageRouterSupportedObjects(const void *const data,
   AddIntToMessage(instance_data->number_of_current_connections, outgoing_message);
   
   size_t struct_size = outgoing_message->used_message_length - struct_start_length;
-  OPENER_TRACE_ERR("Message Router: SupportedObjects STRUCT encoded - STRUCT size: %u bytes (ArrayLen=%u, ArrayElements=%u, MaxConn=%u, NumConn=%u)\n",
-                   (unsigned)struct_size,
-                   instance_data->supported_objects_number,
-                   instance_data->supported_objects_number,
-                   instance_data->max_connections_supported,
-                   instance_data->number_of_current_connections);
+  // Debug logging removed - use OPENER_TRACE_INFO if needed for debugging
+  // OPENER_TRACE_INFO("Message Router: SupportedObjects STRUCT encoded - STRUCT size: %u bytes (ArrayLen=%u, ArrayElements=%u, MaxConn=%u, NumConn=%u)\n",
+  //                  (unsigned)struct_size,
+  //                  instance_data->supported_objects_number,
+  //                  instance_data->supported_objects_number,
+  //                  instance_data->max_connections_supported,
+  //                  instance_data->number_of_current_connections);
 }
 
 /** @brief Encode Message Router instance #1 ActiveConnections attribute

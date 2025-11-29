@@ -135,6 +135,9 @@
 #include "nau7802.h"
 #include "driver/i2c_master.h"
 #include "eth_media_counters.h"
+#if OPENER_LLDP_ENABLED
+#include "esp_vfs_l2tap.h"
+#endif
 
 // Forward declaration - function is in opener component
 SemaphoreHandle_t scale_application_get_assembly_mutex(void);
@@ -772,11 +775,6 @@ static bool tcpip_perform_acd(struct netif *netif, const ip4_addr_t *ip) {
             return false;
         }
     } else if (s_acd_callback_received && s_acd_last_state == ACD_IP_OK) {
-        // MODIFICATION: ACD callback was received but semaphore wait timed out
-        // Added by: Adam G. Sweeney <agsweeney@gmail.com>
-        // This is OK - callback set state to IP_OK, so we can safely continue
-        // The timeout occurred because callback came after semaphore wait started,
-        // but the state change confirms ACD completed successfully
         ESP_LOGI(TAG, "ACD callback received (state=IP_OK) - semaphore timeout was harmless, continuing with IP assignment");
         CipTcpIpSetLastAcdActivity(0);
         return true;
@@ -1115,6 +1113,17 @@ static void ethernet_event_handler(void *arg, esp_event_base_t event_base,
                mac_addr[3], mac_addr[4], mac_addr[5]);
         ESP_ERROR_CHECK(esp_netif_set_mac(eth_netif, mac_addr));
         
+#if OPENER_LLDP_ENABLED
+        uint8_t lldp_multicast_mac[6] = {0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E};
+        esp_err_t mcast_ret = esp_eth_ioctl(eth_handle, ETH_CMD_ADD_MAC_FILTER, lldp_multicast_mac);
+        if (mcast_ret == ESP_OK) {
+            ESP_LOGI(TAG, "LLDP multicast address (01:80:c2:00:00:0e) added to MAC filter");
+        } else {
+            ESP_LOGW(TAG, "Failed to add LLDP multicast to MAC filter: %s (LLDP reception may not work)", 
+                     esp_err_to_name(mcast_ret));
+        }
+#endif
+        
         // Detect PHY and initialize media counters
         if (s_eth_mac != NULL) {
             bool ip101_detected = EthMediaCountersInit(s_eth_mac, CONFIG_OPENER_ETH_PHY_ADDR);
@@ -1231,15 +1240,19 @@ static void got_ip_event_handler(void *arg, esp_event_base_t event_base,
                 ESP_LOGW(TAG, "Failed to initialize Web UI");
             }
             
-            // ModbusTCP is always enabled
-            if (!modbus_tcp_init()) {
-                ESP_LOGW(TAG, "Failed to initialize ModbusTCP");
-            } else {
-                if (!modbus_tcp_start()) {
-                    ESP_LOGW(TAG, "Failed to start ModbusTCP server");
+            // Check NVS setting for ModbusTCP enable/disable
+            if (system_modbus_enabled_load()) {
+                if (!modbus_tcp_init()) {
+                    ESP_LOGW(TAG, "Failed to initialize ModbusTCP");
                 } else {
-                    ESP_LOGI(TAG, "ModbusTCP server started");
+                    if (!modbus_tcp_start()) {
+                        ESP_LOGW(TAG, "Failed to start ModbusTCP server");
+                    } else {
+                        ESP_LOGI(TAG, "ModbusTCP server started (enabled in NVS)");
+                    }
                 }
+            } else {
+                ESP_LOGI(TAG, "ModbusTCP server disabled (not enabled in NVS)");
             }
             
             // Note: NAU7802 scale reading task is now created after NAU7802 initialization
@@ -1298,6 +1311,17 @@ void app_main(void)
 
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    // Register L2 TAP VFS early - BEFORE Ethernet driver starts
+    // This ensures the filter callback is properly registered with the Ethernet netif glue
+    #if OPENER_LLDP_ENABLED
+    esp_err_t l2tap_ret = esp_vfs_l2tap_intf_register(NULL);
+    if (l2tap_ret != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to register L2 TAP VFS early: %s (LLDP may not work)", esp_err_to_name(l2tap_ret));
+    } else {
+        ESP_LOGI(TAG, "L2 TAP VFS registered early (before Ethernet start)");
+    }
+    #endif
 
     /* Ensure default configuration uses DHCP when nothing stored */
     if ((g_tcpip.config_control & kTcpipCfgCtrlMethodMask) != kTcpipCfgCtrlStaticIp &&

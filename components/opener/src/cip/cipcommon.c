@@ -109,13 +109,13 @@ EipStatus NotifyClass(const CipClass *RESTRICT const cip_class,
   CipInstanceNum instance_number =
     message_router_request->request_path.instance_number;                           /* get the instance number */
   
-  /* Log Message Router instance #1 requests for debugging */
-  if(cip_class->class_code == 0x02 && instance_number == 1) { /* Message Router class code, instance 1 */
-    OPENER_TRACE_ERR("Message Router instance #1 request: service=0x%02x, instance->data=%p, number_of_attributes=%u\n",
-                     message_router_request->service, 
-                     (instance_number == 1 && cip_class->instances) ? cip_class->instances->data : NULL,
-                     cip_class->number_of_attributes);
-  }
+  // Debug logging removed - use OPENER_TRACE_INFO if needed for debugging
+  // if(cip_class->class_code == 0x02 && instance_number == 1) { /* Message Router class code, instance 1 */
+  //   OPENER_TRACE_INFO("Message Router instance #1 request: service=0x%02x, instance->data=%p, number_of_attributes=%u\n",
+  //                    message_router_request->service, 
+  //                    (instance_number == 1 && cip_class->instances) ? cip_class->instances->data : NULL,
+  //                    cip_class->number_of_attributes);
+  // }
   
   CipInstance *instance = GetCipInstance(cip_class, instance_number); /* look up the instance (note that if inst==0 this will be the class itself) */
   if(instance) /* if instance is found */
@@ -150,7 +150,10 @@ EipStatus NotifyClass(const CipClass *RESTRICT const cip_class,
     }
     message_router_response->general_status = kCipErrorServiceNotSupported; /* if no services or service not found, return an error reply*/
   } else {
-    OPENER_TRACE_WARN("notify: instance number %d unknown\n", instance_number);
+    OPENER_TRACE_WARN("notify: instance number %d unknown for class 0x%x (0x%04x)\n", 
+                      instance_number, 
+                      (unsigned)cip_class->class_code,
+                      (unsigned)cip_class->class_code);
     /* if instance not found, return an error reply */
     message_router_response->general_status = kCipErrorPathDestinationUnknown;
     /* according to the test tool this is the correct error flag instead of CIP_ERROR_OBJECT_DOES_NOT_EXIST */

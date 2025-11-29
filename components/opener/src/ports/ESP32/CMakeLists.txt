@@ -19,6 +19,7 @@ idf_component_register(
         lwip
         freertos
         esp_eth
+        lldp
     PRIV_REQUIRES
         lwip
         freertos

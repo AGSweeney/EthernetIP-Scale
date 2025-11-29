@@ -1768,9 +1768,9 @@ EipStatus CipFileCreateEDSAndIconFileInstance() {
   
   CipFileSetChecksum(eds_file_instance);
 
-  /* Set file revision to match EDS file revision (1.0) */
-  eds_file_instance->file_revision.major_revision = 1;
-  eds_file_instance->file_revision.minor_revision = 0;
+        /* Set file revision to match EDS file revision (1.2) */
+        eds_file_instance->file_revision.major_revision = 1;
+        eds_file_instance->file_revision.minor_revision = 2;
 
   eds_file_instance->file_format_version = 1;
   eds_file_instance->invocation_method = kCipFileInvocationMethodNotApplicable;
@@ -1958,9 +1958,9 @@ EipStatus CipFileInit() {
       
       if(icon_file_instance->file_handle != NULL && embedded_icon_file_size > 0) {
         CipFileSetChecksum(icon_file_instance);
-        /* Set file revision to match EDS file revision (1.0) */
+        /* Set file revision to match EDS file revision (1.2) */
         icon_file_instance->file_revision.major_revision = 1;
-        icon_file_instance->file_revision.minor_revision = 0;
+        icon_file_instance->file_revision.minor_revision = 2;
       } else if(embedded_icon_file_size == 0) {
         /* Empty icon file - set instance to FileEmpty */
         if(icon_file_instance->file_handle != NULL) {

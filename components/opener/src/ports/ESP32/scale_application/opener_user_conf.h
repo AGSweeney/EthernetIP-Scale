@@ -86,6 +86,15 @@
 
 #define PC_OPENER_ETHERNET_BUFFER_SIZE 512
 
+// LLDP Configuration
+#ifndef OPENER_LLDP_ENABLED
+  #define OPENER_LLDP_ENABLED 1
+#endif
+
+#ifndef OPENER_LLDP_TX_INTERVAL_MS
+  #define OPENER_LLDP_TX_INTERVAL_MS 30000  // 30 seconds (standard)
+#endif
+
 static const MilliSeconds kOpenerTimerTickInMilliSeconds = 10;
 
 #define OPENER_WITH_TRACES

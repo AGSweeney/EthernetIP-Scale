@@ -4,3 +4,6 @@ CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
 
 # Enable OTA support
 CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+
+# Enable L2 TAP support for LLDP raw Ethernet frames
+CONFIG_ESP_NETIF_L2_TAP=y

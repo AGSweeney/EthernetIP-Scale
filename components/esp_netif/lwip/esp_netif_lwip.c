@@ -2,6 +2,11 @@
  * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * MODIFICATIONS:
+ * - Added L2 TAP filter support to enable LLDP frame reception
+ * - Frames are intercepted before being passed to the IP stack
+ * - Modified by: Adam G. Sweeney <agsweeney@gmail.com>
  */
 
 #include <string.h>
@@ -52,6 +57,9 @@
 #include "esp_log.h"
 #if IP_NAPT
 #include "lwip/lwip_napt.h"
+#endif
+#ifdef CONFIG_ESP_NETIF_L2_TAP
+#include "esp_vfs_l2tap.h"
 #endif
 
 
@@ -1396,6 +1404,14 @@ esp_err_t esp_netif_receive(esp_netif_t *esp_netif, void *buffer, size_t len, vo
         };
         esp_event_post(IP_EVENT, IP_EVENT_TX_RX, &evt, sizeof(evt), 0);
     }
+#endif
+#ifdef CONFIG_ESP_NETIF_L2_TAP
+    size_t filter_len = len;
+    esp_vfs_l2tap_eth_filter_frame(esp_netif->driver_handle, buffer, &filter_len, eb);
+    if (filter_len == 0) {
+        return ESP_OK;
+    }
+    len = filter_len;
 #endif
 #ifdef CONFIG_ESP_NETIF_RECEIVE_REPORT_ERRORS
     return esp_netif->lwip_input_fn(esp_netif->netif_handle, buffer, len, eb);
