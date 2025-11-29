@@ -4,7 +4,12 @@ A comprehensive EtherNet/IP communication adapter for the ESP32-P4 microcontroll
 
 ## Overview
 
-This project implements a full-featured EtherNet/IP adapter device on the ESP32-P4 platform using the OpENer open-source EtherNet/IP stack. The device serves as a bridge between EtherNet/IP networks and industrial scale applications, providing real-time weight data via EtherNet/IP assemblies and Modbus TCP.
+This project implements a full-featured EtherNet/IP adapter device on the ESP32-P4 platform using the [OpENer](https://github.com/EIPStackGroup/OpENer) open-source EtherNet/IP stack. The device serves as a bridge between EtherNet/IP networks and industrial scale applications, providing real-time weight data via EtherNet/IP assemblies and Modbus TCP.
+
+**OpENer Integration**: This project is built on top of the OpENer EtherNet/IP stack and includes:
+- Standard OpENer EtherNet/IP stack from [EIPStackGroup/OpENer](https://github.com/EIPStackGroup/OpENer)
+- [OpENer File Object](https://github.com/EIPStackGroup/OpENerFileObject) extension (modified for embedded file handling)
+- LLDP implementation based on the [OpENer LLDP branch](https://github.com/EIPStackGroup/OpENer/tree/LLDP) (modified for ESP32-P4 platform)
 
 **Tested Hardware Configuration:**
 - [Waveshare ESP32-P4-ETH](https://www.waveshare.com/product/arduino/boards-kits/esp32-p4/esp32-p4-eth.htm) development board
@@ -161,27 +166,39 @@ ENIP_Scale/
 ├── main/                    # Main application code (ScaleApplication)
 ├── components/              # Custom components
 │   ├── opener/             # OpENer EtherNet/IP stack
+│   │   └── src/
+│   │       └── cip_objects/
+│   │           └── OpENerFileObject/  # CIP File Object extension
 │   ├── modbus_tcp/         # Modbus TCP server
 │   ├── webui/              # Web interface and REST API
 │   ├── ota_manager/        # OTA update manager
 │   ├── system_config/      # System configuration (NVS)
 │   ├── nau7802/            # NAU7802 scale driver
 │   ├── lldp/               # LLDP (Link Layer Discovery Protocol) component
-│   └── log_buffer/         # Log buffer component
+│   ├── log_buffer/         # Log buffer component
+│   ├── esp_netif/          # Modified ESP-IDF esp_netif component
+│   └── lwip/               # Modified ESP-IDF lwIP component
 ├── eds/                     # EtherNet/IP EDS file
+│   ├── ESP32P4_OPENER.eds  # EDS file
+│   └── favicon.ico         # Device icon source
 ├── docs/                    # Documentation
 │   ├── ASSEMBLY_DATA_LAYOUT.md  # Byte-by-byte assembly layout
 │   ├── API_Endpoints.md         # Web API documentation
 │   ├── ACD_CONFLICT_REPORTING.md # ACD conflict detection guide
 │   ├── FILE_OBJECT_INTEGRATION.md # CIP File Object implementation guide
-│   └── OTA_UPLOAD_FIX.md        # OTA upload implementation notes
-├── dependency_modifications/ # lwIP modifications
+│   ├── NAU7802_API_ENHANCEMENTS.md # NAU7802 API documentation
+│   ├── OPENER_FILE_OBJECT_INTEGRATION.md # File Object integration details
+│   └── WIRESHARK_FILTERS.md     # Wireshark filter documentation
+├── dependency_modifications/ # lwIP modifications documentation
+│   └── LWIP_MODIFICATIONS.md
 ├── tools/                   # Testing and debugging tools
 │   ├── test_acd_conflict.py     # ACD conflict simulator
 │   ├── send_conflict_arp.py      # ARP conflict sender
 │   ├── pdml_to_markdown.py      # Wireshark PDML converter
 │   └── analyze_arp_timing.py    # ARP timing analyzer
 ├── scripts/                 # Build scripts
+│   ├── copy_firmware.py         # Firmware copy utility
+│   └── generate_doxygen_docs.*  # Documentation generation
 └── FirmwareImages/          # Compiled firmware binaries
 ```
 
@@ -279,6 +296,8 @@ Connection types supported:
 
 This device implements full LLDP support for automatic neighbor discovery on Ethernet networks, allowing network management tools to discover and display the network topology.
 
+**LLDP Implementation**: This project's LLDP implementation is based on code from the [OpENer LLDP branch](https://github.com/EIPStackGroup/OpENer/tree/LLDP), which provides LLDP Management Object (Class 0x109) and LLDP Data Table Object (Class 0x10A) as CIP objects. The LLDP component has been adapted for ESP32-P4 with ESP-NETIF L2 TAP integration, FreeRTOS timers, and NVS configuration storage. The LLDP component is located in `components/lldp/` and includes modifications by Adam G. Sweeney for ESP32-P4 platform integration.
+
 ### Overview
 
 LLDP is an IEEE 802.1AB standard protocol that allows devices to advertise their identity, capabilities, and management information to directly connected neighbors on an Ethernet network. This implementation provides:
@@ -343,6 +362,8 @@ The following ESP-IDF components were modified to support LLDP:
 
 **For detailed component documentation, see [components/lldp/README.md](components/lldp/README.md).**
 
+**LLDP Source Code**: The LLDP CIP object implementations (`ciplldpmanagement.c`, `ciplldpdatatable.c`) are based on code from the [OpENer LLDP branch](https://github.com/EIPStackGroup/OpENer/tree/LLDP), Copyright (c) 2024, Rockwell Automation, Inc. These files have been modified for ESP32-P4 platform integration, including thread-safe access, FreeRTOS timer integration, and NVS configuration storage. The ESP32-specific platform code (raw socket, frame building, TLV decoding) was developed for this project.
+
 ## Web Interface
 
 Access the web interface at `http://<device-ip>/` after the device has obtained an IP address.
@@ -389,10 +410,57 @@ All assembly data is stored in little-endian format (Modbus converts to big-endi
 
 The EDS (Electronic Data Sheet) file is located at `eds/ESP32P4_OPENER.eds`. This file can be imported into EtherNet/IP configuration tools to discover and configure the device.
 
-Key device information:
+### EDS File Information
+
+**File Details:**
+- **File Name**: `ESP32P4_OPENER.eds`
+- **Description**: ENIP-SCALE
+- **Revision**: 1.2
+- **Created**: November 8, 2025
+- **Last Modified**: December 19, 2025
+- **Home URL**: http://www.AGSweeney.net
+
+**Device Information:**
 - **Vendor**: AGSweeney Automation (Vendor Code: 55512)
-- **Product**: ENIP-Scale (Product Code: 1)
-- **Type**: General Purpose Discrete I/O
+- **Product Name**: ENIP-SCALE (Product Code: 1)
+- **Product Type**: Generic Device (Type Code: 43)
+- **Major Revision**: 1
+- **Minor Revision**: 1
+- **Device Classification**: EtherNetIP
+- **Icon File**: ESP32P4-EIP.ico
+
+**Assembly Instances:**
+- **Assembly 100**: Input Assembly (32 bytes) - Contains NAU7802 scale data and sensor information
+- **Assembly 150**: Output Assembly (32 bytes) - Control commands and output data
+- **Assembly 151**: Configuration Assembly (10 bytes) - Device configuration parameters
+
+**Connection Types:**
+- **Exclusive Owner**: Bidirectional I/O connection (Assembly 150 → Assembly 100)
+- **Input Only**: Unidirectional input connection (Assembly 100 only)
+- **Listen Only**: Unidirectional multicast input connection (Assembly 100 only)
+
+**Connection Parameters:**
+- **Exclusive Owner RPI**: Configurable Requested Packet Interval (default: 1000-10000 µs)
+- **Input Only RPI**: Configurable Requested Packet Interval (default: 1000-10000 µs)
+- **Listen Only RPI**: Configurable Requested Packet Interval (default: 1000-10000 µs)
+- **Config Data**: Configuration data byte parameter
+
+**Device Capacity:**
+- **Maximum I/O Connections**: 3
+- **Maximum Message Connections**: 6
+- **Maximum Consumers Per Multicast**: 0
+
+**Supported CIP Objects:**
+- Identity Object (Class 0x01)
+- Connection Manager Object (Class 0x06)
+- Assembly Object (Class 0x04)
+- QoS Object (Class 0x48)
+- TCP/IP Interface Object (Class 0xF5)
+- Ethernet Link Object (Class 0xF6)
+- Port Object (Class 0xF4)
+- File Object (Class 0x37) - For EDS and icon file download
+- LLDP Management Object (Class 0x109) - For LLDP configuration
+- LLDP Data Table Object (Class 0x10A) - For LLDP neighbor information
 
 ### CIP File Object Integration
 
@@ -404,7 +472,7 @@ The device implements the CIP File Object (Class 0x37) to serve the EDS file and
 - **Embedded Files**: Both EDS and icon files are embedded in firmware at build time
 - **Message Router Support**: Message Router instance #1 advertises supported CIP objects (including File Object) for EtherNet/IP Explorer discovery
 
-**File Object Implementation**: This project uses the [OpENer File Object](https://github.com/EIPStackGroup/OpENerFileObject) implementation, which provides an open-source CIP File Object compatible with the OpENer EtherNet/IP stack.
+**File Object Implementation**: This project uses the [OpENer File Object](https://github.com/EIPStackGroup/OpENerFileObject) implementation, which provides an open-source CIP File Object compatible with the OpENer EtherNet/IP stack. The File Object code has been modified for embedded file handling and is located in `components/opener/src/cip_objects/OpENerFileObject/`. See [docs/FILE_OBJECT_INTEGRATION.md](docs/FILE_OBJECT_INTEGRATION.md) for details on modifications made to the original OpENerFileObject code.
 
 ## Custom lwIP Modifications
 
@@ -452,14 +520,29 @@ This project uses custom components and modified dependencies. When contributing
 This project's own code (main application, Web UI, Modbus TCP, OTA manager, system configuration, etc.) is licensed under the MIT License. See individual source files for copyright attribution.
 
 ### OpENer EtherNet/IP Stack
-This project uses the OpENer EtherNet/IP stack, which is licensed under an adapted BSD-style license. The OpENer license file is included in `components/opener/LICENSE.txt` and must be preserved in all distributions.
+This project uses the [OpENer EtherNet/IP stack](https://github.com/EIPStackGroup/OpENer), which is licensed under an adapted BSD-style license. The OpENer license file is included in `components/opener/LICENSE.txt` and must be preserved in all distributions.
 
 All OpENer source files retain their original copyright notices:
 - Copyright (c) 2009, Rockwell Automation, Inc.
 - Modifications by Adam G. Sweeney <agsweeney@gmail.com> are clearly marked
 
+**OpENer Repository**: https://github.com/EIPStackGroup/OpENer
+
 ### OpENer File Object
 This project uses the [OpENer File Object](https://github.com/EIPStackGroup/OpENerFileObject) implementation, which is licensed under an adapted BSD-style license. The OpENer File Object license file is included in `components/opener/src/cip_objects/OpENerFileObject/license.txt` and must be preserved in all distributions.
+
+**OpENer File Object Repository**: https://github.com/EIPStackGroup/OpENerFileObject
+
+**Note**: The OpENerFileObject code has been modified for this project to support embedded file handling and other ESP32-P4 specific requirements. See [docs/FILE_OBJECT_INTEGRATION.md](docs/FILE_OBJECT_INTEGRATION.md) for details on the modifications.
+
+### LLDP Extension
+This project's LLDP (Link Layer Discovery Protocol) implementation is based on code from the [OpENer LLDP branch](https://github.com/EIPStackGroup/OpENer/tree/LLDP). The LLDP CIP object implementations (`ciplldpmanagement.c`, `ciplldpdatatable.c`) are Copyright (c) 2024, Rockwell Automation, Inc., and have been modified for ESP32-P4 platform integration. The LLDP component is located in `components/lldp/` and includes:
+
+- **OpENer LLDP Branch Code**: LLDP Management Object and LLDP Data Table Object CIP implementations from the OpENer LLDP branch
+- **ESP32-P4 Platform Integration**: ESP-NETIF L2 TAP integration, FreeRTOS timers, NVS configuration storage, and raw socket implementation developed for this project
+- **Modifications**: Thread-safe access, error handling improvements, and ESP32-specific platform code
+
+All source files retain their original copyright notices from Rockwell Automation, Inc., with modifications clearly marked.
 
 ### lwIP Network Stack
 This project includes a modified version of lwIP from ESP-IDF v5.5.1. The lwIP modifications are clearly marked with attribution. Original lwIP license terms apply.
@@ -501,7 +584,9 @@ This project includes a modified version of lwIP from ESP-IDF v5.5.1. The lwIP m
 
 ## References
 
-- [OpENer Documentation](https://github.com/EIPStackGroup/OpENer)
+- **[OpENer EtherNet/IP Stack](https://github.com/EIPStackGroup/OpENer)** - Open-source EtherNet/IP communication stack
+- **[OpENer LLDP Branch](https://github.com/EIPStackGroup/OpENer/tree/LLDP)** - LLDP (Link Layer Discovery Protocol) implementation for OpENer
+- **[OpENer File Object](https://github.com/EIPStackGroup/OpENerFileObject)** - CIP File Object extension for OpENer
 - [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/)
 - [EtherNet/IP Specification](https://www.odva.org/)
 - [Modbus TCP/IP Specification](https://modbus.org/specs.php)
