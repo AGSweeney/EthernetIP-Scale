@@ -1,3 +1,4 @@
+**Note:** There is another version of this software with quite a few changes: [HERE](https://github.com/AGSweeney/FusionCoreEnIP)
 # EthernetIP-Scale
 
 A comprehensive EtherNet/IP communication adapter for the ESP32-P4 microcontroller, integrating NAU7802 precision scale support, Modbus TCP, and web-based configuration.
